@@ -1,0 +1,533 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum PlatformRole {
+  PLATFORM_ADMIN
+  USER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  ARCHIVED
+}
+
+enum RegistrationStatus {
+  APPLIED
+  APPROVED
+  WAITLISTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum TeamRole {
+  CAPTAIN
+  MANAGER
+  PLAYER
+}
+
+enum TournamentAdminRole {
+  ADMIN
+  SCORER
+}
+
+enum MatchStatus {
+  UPCOMING
+  OPEN_FOR_SUBMISSION
+  LOCKED
+  IN_PROGRESS
+  COMPLETED
+  TIEBREAK_REQUIRED
+}
+
+enum QualificationStatus {
+  QUALIFIED
+  ELIMINATED
+  GROUP_LEADER
+  ON_THE_BUBBLE
+}
+
+enum NotificationType {
+  REGISTRATION_APPROVED
+  REGISTRATION_REJECTED
+  REGISTRATION_WAITLISTED
+  TEAM_ASSIGNED
+  MATCH_SCHEDULED
+  LINEUP_DEADLINE
+  LINEUP_LOCKED
+  RESULT_PUBLISHED
+  ANNOUNCEMENT
+  TIEBREAK_REQUIRED
+}
+
+enum TournamentVisibility {
+  PUBLIC
+  UNLISTED
+  INVITE_ONLY
+}
+
+// ─── USERS & PROFILES ─────────────────────────────────────────────────────────
+
+model User {
+  id           String       @id @default(cuid())
+  clerkId      String?      @unique
+  email        String       @unique
+  name         String
+  phone        String?
+  avatarUrl    String?
+  platformRole PlatformRole @default(USER)
+  isImported   Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  playerProfile      PlayerProfile?
+  tournamentAdmins   TournamentAdmin[]
+  notifications      Notification[]
+  createdTournaments Tournament[]      @relation("TournamentCreator")
+  pushSubscriptions  PushSubscription[]
+
+  @@map("users")
+}
+
+model PlayerProfile {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  slug             String    @unique
+  dateOfBirth      DateTime?
+  gender           Gender?
+  yearsPlaying     Int?
+  selfRating       Float?
+  bio              String?
+  location         String?
+  emergencyContact String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registrations   Registration[]
+  teamMemberships TeamMembership[]
+  lineupSlots     LineupSlot[]
+
+  @@map("player_profiles")
+}
+
+// ─── SPORT & TEMPLATES ────────────────────────────────────────────────────────
+
+model Sport {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  slug     String  @unique
+  icon     String?
+  isActive Boolean @default(true)
+
+  templates   SportTemplate[]
+  tournaments Tournament[]
+
+  @@map("sports")
+}
+
+model SportTemplate {
+  id            String  @id @default(cuid())
+  sportId       String
+  name          String
+  isDefault     Boolean @default(false)
+  scoringConfig Json
+  matchFormat   Json
+  description   String?
+
+  sport               Sport                @relation(fields: [sportId], references: [id])
+  tournamentTemplates TournamentTemplate[]
+
+  @@map("sport_templates")
+}
+
+model TournamentTemplate {
+  id              String   @id @default(cuid())
+  name            String
+  sportTemplateId String
+  creatorId       String?
+  isPublic        Boolean  @default(false)
+  structure       Json
+  matchFormatOverride Json?
+  scoringOverride     Json?
+  standingsConfig Json
+  createdAt       DateTime @default(now())
+
+  sportTemplate SportTemplate @relation(fields: [sportTemplateId], references: [id])
+  tournaments   Tournament[]
+
+  @@map("tournament_templates")
+}
+
+// ─── TOURNAMENT ───────────────────────────────────────────────────────────────
+
+model Tournament {
+  id                 String           @id @default(cuid())
+  slug               String           @unique
+  name               String
+  sportId            String
+  templateId         String?
+  createdBy          String
+
+  status             TournamentStatus @default(DRAFT)
+
+  startDate          DateTime
+  endDate            DateTime
+  venue              String
+  venueAddress       String?
+  timezone           String           @default("Asia/Kolkata")
+
+  description        String?
+  rules              String?
+
+  logoUrl            String?
+  bannerUrl          String?
+  primaryColor       String?
+  secondaryColor     String?
+
+  maxPlayers         Int
+  numTeams           Int
+  playersPerTeam     Int
+  numGroups          Int
+
+  matchFormat        Json
+  scoringConfig      Json
+  standingsConfig    Json
+  tiebreakConfig     Json
+  registrationConfig Json
+
+  isPublic           Boolean              @default(true)
+  visibility         TournamentVisibility @default(PUBLIC)
+  registrationCode   String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  sport         Sport               @relation(fields: [sportId], references: [id])
+  template      TournamentTemplate? @relation(fields: [templateId], references: [id])
+  creator       User                @relation("TournamentCreator", fields: [createdBy], references: [id])
+  groups        TournamentGroup[]
+  teams         Team[]
+  matches       Match[]
+  registrations Registration[]
+  announcements Announcement[]
+  admins        TournamentAdmin[]
+  standings     Standings[]
+
+  @@index([status])
+  @@index([sportId])
+  @@index([startDate])
+  @@map("tournaments")
+}
+
+model TournamentGroup {
+  id           String @id @default(cuid())
+  tournamentId String
+  name         String
+  order        Int
+
+  tournament Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teams      Team[]
+  matches    Match[]
+  standings  Standings[]
+
+  @@unique([tournamentId, order])
+  @@map("tournament_groups")
+}
+
+model TournamentAdmin {
+  id           String              @id @default(cuid())
+  tournamentId String
+  userId       String
+  role         TournamentAdminRole @default(ADMIN)
+  assignedAt   DateTime            @default(now())
+  assignedBy   String
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+  @@map("tournament_admins")
+}
+
+// ─── TEAMS ────────────────────────────────────────────────────────────────────
+
+model Team {
+  id           String   @id @default(cuid())
+  tournamentId String
+  groupId      String?
+  name         String
+  slug         String
+  logoUrl      String?
+  primaryColor String?
+  captainId    String?
+  createdAt    DateTime @default(now())
+
+  tournament  Tournament       @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  group       TournamentGroup? @relation(fields: [groupId], references: [id])
+  memberships TeamMembership[]
+  homeMatches Match[]          @relation("HomeTeam")
+  awayMatches Match[]          @relation("AwayTeam")
+  standings   Standings[]
+  lineups     MatchLineup[]
+
+  @@unique([tournamentId, slug])
+  @@index([tournamentId])
+  @@map("teams")
+}
+
+model TeamMembership {
+  id       String   @id @default(cuid())
+  teamId   String
+  playerId String
+  role     TeamRole @default(PLAYER)
+  joinedAt DateTime @default(now())
+
+  team   Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player PlayerProfile @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, playerId])
+  @@index([playerId])
+  @@map("team_memberships")
+}
+
+// ─── REGISTRATIONS ────────────────────────────────────────────────────────────
+
+model Registration {
+  id           String             @id @default(cuid())
+  tournamentId String
+  playerId     String
+  teamId       String?
+  status       RegistrationStatus @default(APPLIED)
+  formData     Json
+  appliedAt    DateTime           @default(now())
+  reviewedAt   DateTime?
+  reviewedBy   String?
+  notes        String?
+
+  tournament Tournament    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  player     PlayerProfile @relation(fields: [playerId], references: [id])
+
+  @@unique([tournamentId, playerId])
+  @@index([tournamentId, status])
+  @@map("registrations")
+}
+
+// ─── MATCHES ──────────────────────────────────────────────────────────────────
+
+model Match {
+  id           String      @id @default(cuid())
+  tournamentId String
+  groupId      String?
+  homeTeamId   String
+  awayTeamId   String
+  slug         String      @unique
+
+  status       MatchStatus @default(UPCOMING)
+
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  court        String?
+  round        Int?
+  matchNumber  Int?
+
+  homeTeamScore    Int?
+  awayTeamScore    Int?
+  winnerId         String?
+  isTiebreak       Boolean @default(false)
+  tiebreakWinnerId String?
+
+  gameTypes    Json?
+
+  scorecardUrl String?
+  verifiedBy   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tournament Tournament       @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  group      TournamentGroup? @relation(fields: [groupId], references: [id])
+  homeTeam   Team             @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam   Team             @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  games      MatchGame[]
+  lineups    MatchLineup[]
+
+  @@index([tournamentId, status])
+  @@index([tournamentId, scheduledAt])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@map("matches")
+}
+
+model MatchGame {
+  id            String    @id @default(cuid())
+  matchId       String
+  gameNumber    Int
+  homeScore     Int?
+  awayScore     Int?
+  winnerId      String?
+  isTiebreak    Boolean   @default(false)
+  homePlayer1Id String?
+  homePlayer2Id String?
+  awayPlayer1Id String?
+  awayPlayer2Id String?
+  completedAt   DateTime?
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, gameNumber])
+  @@map("match_games")
+}
+
+model MatchLineup {
+  id          String    @id @default(cuid())
+  matchId     String
+  teamId      String
+  submittedBy String
+  submittedAt DateTime  @default(now())
+  isLocked    Boolean   @default(false)
+  lockedBy    String?
+  lockedAt    DateTime?
+  isVisible   Boolean   @default(false)
+
+  match Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team  Team         @relation(fields: [teamId], references: [id])
+  slots LineupSlot[]
+
+  @@unique([matchId, teamId])
+  @@map("match_lineups")
+}
+
+model LineupSlot {
+  id         String @id @default(cuid())
+  lineupId   String
+  gameNumber Int
+  position   Int
+  playerId   String
+
+  lineup MatchLineup   @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  player PlayerProfile @relation(fields: [playerId], references: [id])
+
+  @@unique([lineupId, gameNumber, position])
+  @@map("lineup_slots")
+}
+
+// ─── STANDINGS ────────────────────────────────────────────────────────────────
+
+model Standings {
+  id                  String               @id @default(cuid())
+  tournamentId        String
+  groupId             String
+  teamId              String
+  position            Int
+  matchesPlayed       Int                  @default(0)
+  matchesWon          Int                  @default(0)
+  matchesLost         Int                  @default(0)
+  matchesDrawn        Int                  @default(0)
+  gamesWon            Int                  @default(0)
+  gamesLost           Int                  @default(0)
+  gameDifferential    Int                  @default(0)
+  points              Int                  @default(0)
+  qualificationStatus QualificationStatus?
+  lastUpdated         DateTime             @default(now()) @updatedAt
+
+  tournament Tournament      @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  group      TournamentGroup @relation(fields: [groupId], references: [id])
+  team       Team            @relation(fields: [teamId], references: [id])
+
+  @@unique([tournamentId, groupId, teamId])
+  @@index([tournamentId, groupId, position])
+  @@map("standings")
+}
+
+// ─── PUSH SUBSCRIPTIONS ───────────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint])
+  @@map("push_subscriptions")
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ─── ANNOUNCEMENTS ────────────────────────────────────────────────────────────
+
+model Announcement {
+  id           String   @id @default(cuid())
+  tournamentId String
+  title        String
+  body         String
+  isPinned     Boolean  @default(false)
+  isPublished  Boolean  @default(false)
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, isPublished])
+  @@map("announcements")
+}
+
+// ─── AUDIT LOG ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}

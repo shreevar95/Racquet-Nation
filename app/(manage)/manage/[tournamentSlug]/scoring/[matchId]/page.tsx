@@ -1,0 +1,54 @@
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth'
+import { canEnterScores } from '@/lib/permissions'
+import { ScoreEntryForm } from './ScoreEntryForm'
+
+interface Props {
+  params: Promise<{ tournamentSlug: string; matchId: string }>
+}
+
+export const metadata: Metadata = { title: 'Enter Scores' }
+
+export default async function ScoreEntryPage({ params }: Props) {
+  const { tournamentSlug, matchId } = await params
+  const user = await requireAuth()
+
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    include: {
+      homeTeam: { select: { id: true, name: true } },
+      awayTeam: { select: { id: true, name: true } },
+      tournament: {
+        select: {
+          matchFormat: true,
+          scoringConfig: true,
+          name: true,
+          slug: true,
+        },
+      },
+      games: { orderBy: { gameNumber: 'asc' } },
+    },
+  })
+  if (!match) notFound()
+  if (!(await canEnterScores(user.id, match.tournamentId))) notFound()
+
+  const matchFormat = match.tournament.matchFormat as { gamesPerMatch: number; tiebreakEnabled: boolean }
+
+  return (
+    <ScoreEntryForm
+      matchId={match.id}
+      tournamentSlug={match.tournament.slug}
+      homeTeam={match.homeTeam}
+      awayTeam={match.awayTeam}
+      gamesPerMatch={matchFormat.gamesPerMatch}
+      tiebreakEnabled={matchFormat.tiebreakEnabled}
+      existingGames={match.games.map((g) => ({
+        gameNumber: g.gameNumber,
+        homeScore: g.homeScore ?? 0,
+        awayScore: g.awayScore ?? 0,
+      }))}
+    />
+  )
+}
