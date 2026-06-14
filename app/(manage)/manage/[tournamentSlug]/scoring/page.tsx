@@ -157,13 +157,11 @@ function MatchRow({
         <Badge variant={STATUS_BADGE[match.status] ?? 'default'}>
           {match.status.replace(/_/g, ' ')}
         </Badge>
-        {!completed && (
-          <Link href={`/manage/${tournamentSlug}/scoring/${match.id}`}>
-            <Button size="icon-sm" variant={match.status === 'LOCKED' ? 'default' : 'outline'}>
-              <Swords size={14} />
-            </Button>
-          </Link>
-        )}
+        <Link href={`/manage/${tournamentSlug}/scoring/${match.id}`}>
+          <Button size="icon-sm" variant={completed ? 'outline' : match.status === 'LOCKED' ? 'default' : 'outline'}>
+            <Swords size={14} />
+          </Button>
+        </Link>
       </div>
     </div>
   )

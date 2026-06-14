@@ -40,9 +40,21 @@ export default async function ManageOverviewPage({ params }: Props) {
   if (!tournament) notFound()
   if (!(await canManageTournament(user.id, tournament.id))) notFound()
 
-  const pendingRegistrations = await prisma.registration.count({
-    where: { tournamentId: tournament.id, status: 'APPLIED' },
-  })
+  const [pendingRegistrations, groups] = await Promise.all([
+    prisma.registration.count({
+      where: { tournamentId: tournament.id, status: 'APPLIED' },
+    }),
+    prisma.tournamentGroup.findMany({
+      where: { tournamentId: tournament.id },
+      orderBy: { order: 'asc' },
+      include: {
+        standings: {
+          orderBy: { position: 'asc' },
+          include: { team: { select: { name: true, slug: true } } },
+        },
+      },
+    }),
+  ])
 
   return (
     <div className="space-y-6">
@@ -153,6 +165,59 @@ export default async function ManageOverviewPage({ params }: Props) {
           <p className="text-xs text-text-secondary mt-1">
             This tournament has been cancelled and is no longer publicly listed.
           </p>
+        </div>
+      )}
+
+      {/* Points table */}
+      {groups.some((g) => g.standings.length > 0) && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="h-0.5 w-4 bg-brand-500" />
+            <p className="text-brand-500 text-xs font-bold tracking-[0.15em] uppercase font-display">
+              Points Table
+            </p>
+          </div>
+          {groups.map((group) =>
+            group.standings.length > 0 ? (
+              <div key={group.id} className="rounded-lg border border-border bg-surface-raised overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-border bg-surface-overlay">
+                  <p className="text-xs font-display font-bold uppercase tracking-wider text-text-muted">{group.name}</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border text-text-muted">
+                        <th className="text-left px-4 py-2 font-semibold w-6">#</th>
+                        <th className="text-left px-2 py-2 font-semibold">Team</th>
+                        <th className="text-center px-2 py-2 font-semibold">P</th>
+                        <th className="text-center px-2 py-2 font-semibold">W</th>
+                        <th className="text-center px-2 py-2 font-semibold">L</th>
+                        <th className="text-center px-2 py-2 font-semibold">GW</th>
+                        <th className="text-center px-2 py-2 font-semibold">GL</th>
+                        <th className="text-center px-2 py-2 font-semibold text-brand-400">Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {group.standings.map((row) => (
+                        <tr key={row.teamId} className="hover:bg-surface-overlay transition-colors">
+                          <td className={['px-4 py-2.5 font-black font-display', row.position === 1 ? 'text-brand-500' : 'text-text-muted'].join(' ')}>
+                            {row.position}
+                          </td>
+                          <td className="px-2 py-2.5 font-semibold text-text-primary">{row.team.name}</td>
+                          <td className="px-2 py-2.5 text-center text-text-secondary">{row.matchesPlayed}</td>
+                          <td className="px-2 py-2.5 text-center text-text-secondary">{row.matchesWon}</td>
+                          <td className="px-2 py-2.5 text-center text-text-secondary">{row.matchesLost}</td>
+                          <td className="px-2 py-2.5 text-center text-text-secondary">{row.gamesWon}</td>
+                          <td className="px-2 py-2.5 text-center text-text-secondary">{row.gamesLost}</td>
+                          <td className="px-2 py-2.5 text-center font-black text-brand-400 font-display">{row.points}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null,
+          )}
         </div>
       )}
 
