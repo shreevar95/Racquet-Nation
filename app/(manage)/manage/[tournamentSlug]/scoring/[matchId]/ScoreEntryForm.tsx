@@ -91,6 +91,9 @@ export function ScoreEntryForm({
     const existing = existingGames.find((g) => g.gameNumber === i + 1)
     return { gameNumber: i + 1, homeScore: existing?.homeScore ?? 0, awayScore: existing?.awayScore ?? 0 }
   })
+  // Include tiebreak game if it was already saved to DB
+  const savedTiebreak = existingGames.find((g) => g.gameNumber === gamesPerMatch + 1)
+  if (savedTiebreak) initialScores.push(savedTiebreak)
 
   const [scores, setScores] = useState<GameScore[]>(initialScores)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -158,19 +161,40 @@ export function ScoreEntryForm({
     )
   }
 
-  // Live match score summary (strict 11+2 rule — for display only)
-  const homeWins = scores.filter((g) => gameWinner(g.homeScore, g.awayScore) === 'home').length
-  const awayWins = scores.filter((g) => gameWinner(g.homeScore, g.awayScore) === 'away').length
-  const isTie = homeWins === awayWins && homeWins > 0 && tiebreakEnabled
-  const allComplete = scores.every((g) => isGameComplete(g.homeScore, g.awayScore))
+  // Auto-add tiebreak game when regular games result in a draw
+  const scoreKey = scores.slice(0, gamesPerMatch).map((g) => `${g.homeScore}-${g.awayScore}`).join(',')
+  useEffect(() => {
+    if (!tiebreakEnabled) return
+    const regular = scores.slice(0, gamesPerMatch)
+    const hLeads = regular.filter((g) => g.homeScore > g.awayScore).length
+    const aLeads = regular.filter((g) => g.awayScore > g.homeScore).length
+    const isDraw = hLeads === aLeads && hLeads + aLeads === gamesPerMatch
+    if (isDraw && scores.length === gamesPerMatch) {
+      setScores((prev) => [...prev, { gameNumber: gamesPerMatch + 1, homeScore: 0, awayScore: 0 }])
+    } else if (!isDraw && scores.length > gamesPerMatch) {
+      setScores((prev) => prev.slice(0, gamesPerMatch))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scoreKey, tiebreakEnabled, gamesPerMatch])
 
-  // For submit: use simple > comparison (not 11+2) so admin isn't blocked by rule
-  const homeLeads = scores.filter((g) => g.homeScore > g.awayScore).length
-  const awayLeads = scores.filter((g) => g.awayScore > g.homeScore).length
+  // Live match score summary (strict 11+2 rule — for display only)
+  const regularScores = scores.slice(0, gamesPerMatch)
+  const homeWins = regularScores.filter((g) => gameWinner(g.homeScore, g.awayScore) === 'home').length
+  const awayWins = regularScores.filter((g) => gameWinner(g.homeScore, g.awayScore) === 'away').length
+  const hasTiebreakGame = scores.length > gamesPerMatch
+  const tiebreakScore = hasTiebreakGame ? scores[gamesPerMatch] : null
+  const tiebreakWinner = tiebreakScore ? gameWinner(tiebreakScore.homeScore, tiebreakScore.awayScore) : null
+  const isTie = homeWins === awayWins && homeWins > 0 && tiebreakEnabled && !hasTiebreakGame
+  const allComplete = regularScores.every((g) => isGameComplete(g.homeScore, g.awayScore))
+
+  // For submit: use simple > comparison so admin isn't blocked by 11+2 rule
+  const homeLeads = regularScores.filter((g) => g.homeScore > g.awayScore).length
+  const awayLeads = regularScores.filter((g) => g.awayScore > g.homeScore).length
   const hasDecisiveWinner = Math.max(homeLeads, awayLeads) > gamesPerMatch / 2
-  // Also allow submit when all games have any score entered
   const allScoresEntered = scores.every((g) => g.homeScore > 0 || g.awayScore > 0)
-  const canSubmit = allComplete || hasDecisiveWinner || allScoresEntered
+  // If tiebreak game exists, require it to also have a score
+  const tiebreakComplete = !hasTiebreakGame || (tiebreakScore !== null && (tiebreakScore.homeScore > 0 || tiebreakScore.awayScore > 0))
+  const canSubmit = tiebreakComplete && (allComplete || hasDecisiveWinner || allScoresEntered)
 
   function handleSubmit() {
     startTransition(async () => {
@@ -216,21 +240,22 @@ export function ScoreEntryForm({
 
       {/* Score rows */}
       <div className="flex-1 overflow-y-auto">
-        {isTie && (
+        {hasTiebreakGame && (
           <div className="bg-warning-bg border-b border-warning/20 px-4 py-2 text-center">
             <p className="text-warning text-xs font-medium">
-              Tied {homeWins}–{awayWins} — tiebreak game will be required
+              Tied {homeWins}–{awayWins} — enter tiebreak game below
             </p>
           </div>
         )}
 
         <div className="divide-y divide-border">
           {scores.map((game, i) => {
+            const isTiebreakGame = i === gamesPerMatch
             const winner = gameWinner(game.homeScore, game.awayScore)
             return (
-              <div key={game.gameNumber} className="px-4 py-5">
+              <div key={game.gameNumber} className={['px-4 py-5', isTiebreakGame ? 'bg-warning-bg/30' : ''].join(' ')}>
                 <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4 text-center">
-                  Game {game.gameNumber}
+                  {isTiebreakGame ? '⚡ Tiebreak Game' : `Game ${game.gameNumber}`}
                   {winner && (
                     <span className="text-success ml-2">
                       — {winner === 'home' ? homeTeam.name : awayTeam.name} wins
