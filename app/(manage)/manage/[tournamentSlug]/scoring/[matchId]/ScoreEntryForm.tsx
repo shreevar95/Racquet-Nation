@@ -158,14 +158,19 @@ export function ScoreEntryForm({
     )
   }
 
-  // Live match score summary
+  // Live match score summary (strict 11+2 rule — for display only)
   const homeWins = scores.filter((g) => gameWinner(g.homeScore, g.awayScore) === 'home').length
   const awayWins = scores.filter((g) => gameWinner(g.homeScore, g.awayScore) === 'away').length
   const isTie = homeWins === awayWins && homeWins > 0 && tiebreakEnabled
   const allComplete = scores.every((g) => isGameComplete(g.homeScore, g.awayScore))
-  // Decisive: one team has already won more than half the games — match is settled
-  const hasDecisiveWinner = Math.max(homeWins, awayWins) > gamesPerMatch / 2
-  const canSubmit = allComplete || hasDecisiveWinner
+
+  // For submit: use simple > comparison (not 11+2) so admin isn't blocked by rule
+  const homeLeads = scores.filter((g) => g.homeScore > g.awayScore).length
+  const awayLeads = scores.filter((g) => g.awayScore > g.homeScore).length
+  const hasDecisiveWinner = Math.max(homeLeads, awayLeads) > gamesPerMatch / 2
+  // Also allow submit when all games have any score entered
+  const allScoresEntered = scores.every((g) => g.homeScore > 0 || g.awayScore > 0)
+  const canSubmit = allComplete || hasDecisiveWinner || allScoresEntered
 
   function handleSubmit() {
     startTransition(async () => {
@@ -184,7 +189,7 @@ export function ScoreEntryForm({
   }
 
   return (
-    <div className="fixed inset-0 bg-surface flex flex-col z-40">
+    <div className="fixed inset-0 bg-surface flex flex-col z-[60]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0">
         <button
