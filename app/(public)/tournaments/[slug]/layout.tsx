@@ -11,7 +11,7 @@ interface Props {
 
 const STATUS_VARIANT: Record<string, 'default' | 'info' | 'success' | 'brand' | 'warning'> = {
   DRAFT: 'default',
-  REGISTRATION_OPEN: 'info',
+  REGISTRATION_OPEN: 'success',
   REGISTRATION_CLOSED: 'warning',
   ACTIVE: 'brand',
   COMPLETED: 'success',
@@ -21,6 +21,7 @@ const STATUS_VARIANT: Record<string, 'default' | 'info' | 'success' | 'brand' | 
 
 const TABS = [
   { href: '', label: 'Overview' },
+  { href: '/bracket', label: 'Bracket' },
   { href: '/schedule', label: 'Schedule' },
   { href: '/results', label: 'Results' },
   { href: '/standings', label: 'Standings' },

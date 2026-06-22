@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { createTournament } from '@/actions/tournament'
+import { createTournament, updateTournamentFull } from '@/actions/tournament'
 import type { CreateTournamentInput } from '@/types/tournament'
 import { Step1Basics } from './Step1Basics'
 import { Step2Structure } from './Step2Structure'
@@ -19,7 +20,7 @@ const STEPS = [
   { label: 'Match Format', description: 'Scoring and game rules' },
   { label: 'Registration', description: 'Who can sign up' },
   { label: 'Standings',    description: 'Points and tiebreakers' },
-  { label: 'Review',       description: 'Confirm and create' },
+  { label: 'Review',       description: 'Confirm and save' },
 ]
 
 const DEFAULT_VALUES: CreateTournamentInput = {
@@ -44,6 +45,11 @@ const DEFAULT_VALUES: CreateTournamentInput = {
     playersPerSide: 2,
     tiebreakEnabled: true,
     tiebreakFormat: 'SINGLE_GAME',
+    tournamentStructure: 'GROUP_STAGE_ONLY',
+    knockoutType: 'ROUND_ROBIN',
+    knockoutGamesPerMatch: 3,
+    knockoutPointsToWin: undefined,
+    teamsAdvancePerGroup: 2,
   },
   scoringConfig: {
     pointsToWin: 21,
@@ -81,11 +87,16 @@ const DEFAULT_VALUES: CreateTournamentInput = {
 
 interface Props {
   sports: { id: string; name: string; slug: string }[]
+  mode?: 'create' | 'edit'
+  tournamentId?: string
+  tournamentSlug?: string
+  initialData?: CreateTournamentInput
 }
 
-export function TournamentWizard({ sports }: Props) {
+export function TournamentWizard({ sports, mode = 'create', tournamentId, tournamentSlug, initialData }: Props) {
+  const router = useRouter()
   const [step, setStep] = useState(0)
-  const [data, setData] = useState<CreateTournamentInput>(DEFAULT_VALUES)
+  const [data, setData] = useState<CreateTournamentInput>(initialData ?? DEFAULT_VALUES)
   const [isPending, startTransition] = useTransition()
 
   function update(patch: Partial<CreateTournamentInput>) {
@@ -100,13 +111,23 @@ export function TournamentWizard({ sports }: Props) {
     setStep((s) => Math.max(s - 1, 0))
   }
 
-  function handleCreate() {
+  function handleSubmit() {
     startTransition(async () => {
-      const result = await createTournament(data)
-      if (result && !result.success) {
-        toast.error(result.error)
+      if (mode === 'edit' && tournamentId) {
+        const result = await updateTournamentFull(tournamentId, data)
+        if (!result.success) {
+          toast.error(result.error)
+        } else {
+          toast.success('Tournament updated successfully')
+          router.push(`/manage/${tournamentSlug}`)
+        }
+      } else {
+        const result = await createTournament(data)
+        if (result && !result.success) {
+          toast.error(result.error)
+        }
+        // On success, createTournament redirects — nothing else needed here
       }
-      // On success, createTournament redirects — nothing else needed here
     })
   }
 
@@ -157,7 +178,7 @@ export function TournamentWizard({ sports }: Props) {
         {step === 2 && <Step3Format {...stepProps} />}
         {step === 3 && <Step4Registration {...stepProps} />}
         {step === 4 && <Step5Standings {...stepProps} />}
-        {step === 5 && <Step6Review data={data} />}
+        {step === 5 && <Step6Review data={data} mode={mode} />}
       </div>
 
       {/* Navigation */}
@@ -171,8 +192,8 @@ export function TournamentWizard({ sports }: Props) {
             Next <ChevronRight size={16} />
           </Button>
         ) : (
-          <Button onClick={handleCreate} loading={isPending}>
-            Create Tournament
+          <Button onClick={handleSubmit} loading={isPending}>
+            {mode === 'edit' ? 'Save Changes' : 'Create Tournament'}
           </Button>
         )}
       </div>

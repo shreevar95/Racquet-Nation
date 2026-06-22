@@ -7,7 +7,7 @@ export const contentType = 'image/png'
 
 export default function Icon() {
   const logoBuffer = readFileSync(
-    join(process.cwd(), 'public/images/logos/rn-icon-dark.png'),
+    join(process.cwd(), 'public/images/logos/rn-monogram-white.png'),
   )
   const logoSrc = `data:image/png;base64,${logoBuffer.toString('base64')}`
 
@@ -21,9 +21,9 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          padding: '16px',
         }}
       >
-        {/* rn-icon-dark is landscape (2940×1912) — contain centres it with dark navy padding */}
         <img
           src={logoSrc}
           style={{ width: '100%', height: '100%', objectFit: 'contain' }}

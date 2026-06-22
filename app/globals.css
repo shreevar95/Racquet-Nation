@@ -70,14 +70,14 @@
 /* Dark theme (default) */
 :root {
   color-scheme: dark;
-  --rn-surface:         #0f1923;
-  --rn-surface-raised:  #162030;
-  --rn-surface-overlay: #1e2d40;
-  --rn-border:          #2a3d52;
-  --rn-border-subtle:   #192636;
-  --rn-text-primary:    #f5f5f5;
-  --rn-text-secondary:  #a3a3a3;
-  --rn-text-muted:      #525252;
+  --rn-surface:         #0d1b2a;
+  --rn-surface-raised:  #152234;
+  --rn-surface-overlay: #1c2e44;
+  --rn-border:          #2e4a64;
+  --rn-border-subtle:   #1a2e42;
+  --rn-text-primary:    #f0f6ff;
+  --rn-text-secondary:  #7dd3fc;
+  --rn-text-muted:      #3b82f6;
   --rn-success-bg:      #052e16;
   --rn-warning-bg:      #451a03;
   --rn-error-bg:        #450a0a;
@@ -85,12 +85,13 @@
 }
 
 html {
-  background-color: var(--rn-surface);
+  background: linear-gradient(180deg, #000000 0%, #091422 25%, #0d1b2a 55%) fixed;
+  min-height: 100%;
   color: var(--rn-text-primary);
 }
 
 body {
-  background-color: var(--color-surface);
+  background: transparent;
   color: var(--color-text-primary);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;

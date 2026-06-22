@@ -35,6 +35,23 @@ export async function canEnterScores(userId: string, tournamentId: string): Prom
   return !!admin // Both ADMIN and SCORER roles can enter scores
 }
 
+export async function isTournamentCaptain(userId: string, tournamentId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { playerProfile: { select: { id: true } } },
+  })
+  if (!user?.playerProfile) return false
+
+  const membership = await prisma.teamMembership.findFirst({
+    where: {
+      playerId: user.playerProfile.id,
+      role: 'CAPTAIN',
+      team: { tournamentId },
+    },
+  })
+  return !!membership
+}
+
 export async function isTeamCaptain(userId: string, teamId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },

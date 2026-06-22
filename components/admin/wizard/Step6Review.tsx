@@ -3,6 +3,7 @@ import { formatDate } from '@/lib/utils'
 
 interface Props {
   data: CreateTournamentInput
+  mode?: 'create' | 'edit'
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -14,7 +15,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-export function Step6Review({ data }: Props) {
+export function Step6Review({ data, mode = 'create' }: Props) {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
@@ -75,7 +76,9 @@ export function Step6Review({ data }: Props) {
 
       <div className="rounded-lg border border-brand-500/30 bg-brand-500/5 p-4">
         <p className="text-sm text-brand-400 font-medium">
-          Review everything above — you can edit settings after creation from the tournament management dashboard.
+          {mode === 'edit'
+            ? 'Review your changes — click Save Changes to apply them.'
+            : 'Review everything above — you can edit settings after creation from the tournament management dashboard.'}
         </p>
       </div>
     </div>

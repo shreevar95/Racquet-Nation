@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Trophy, Swords, Bell, User } from 'lucide-react'
+import { Home, Trophy, Swords, Users, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { href: '/dashboard',     label: 'Home',         icon: Home },
-  { href: '/tournaments',   label: 'Tournaments',  icon: Trophy },
-  { href: '/my-matches',    label: 'Matches',      icon: Swords },
-  { href: '/notifications', label: 'Alerts',       icon: Bell },
-  { href: '/profile',       label: 'Profile',      icon: User },
+  { href: '/dashboard',   label: 'Home',        icon: Home },
+  { href: '/tournaments', label: 'Tournaments', icon: Trophy },
+  { href: '/my-matches',  label: 'Matches',     icon: Swords },
+  { href: '/my-teams',    label: 'My Teams',    icon: Users },
+  { href: '/profile',     label: 'Profile',     icon: User },
 ]
 
 export function BottomNav() {

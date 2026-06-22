@@ -14,7 +14,12 @@ export const MatchFormatSchema = z.object({
   playersPerSide: z.number().int().min(1).max(2),
   tiebreakEnabled: z.boolean(),
   tiebreakFormat: z.enum(['SINGLE_GAME', 'BEST_OF_3']).optional(),
-  gameTypes: z.record(z.string(), z.string()).optional(), // {"1": "MENS_SINGLES", "2": "WOMENS_DOUBLES", ...}
+  gameTypes: z.record(z.string(), z.string()).optional(),
+  tournamentStructure: z.enum(['GROUP_STAGE_ONLY', 'KNOCKOUT_ONLY', 'GROUP_STAGE_PLUS_KNOCKOUT']).default('GROUP_STAGE_ONLY'),
+  knockoutType: z.enum(['ROUND_ROBIN', 'BRACKET']).default('ROUND_ROBIN'),
+  knockoutGamesPerMatch: z.number().int().min(1).max(9).optional(),
+  knockoutPointsToWin: z.number().int().min(1).optional(),
+  teamsAdvancePerGroup: z.number().int().min(1).optional(),
 })
 
 export const StandingsConfigSchema = z.object({

@@ -35,8 +35,10 @@ export default async function ScoreEntryPage({ params }: Props) {
   if (!(await canEnterScores(user.id, match.tournamentId))) notFound()
 
   const rawFormat = match.tournament.matchFormat as { gamesPerMatch?: number; tiebreakEnabled?: boolean } | null
+  const rawScoring = match.tournament.scoringConfig as { pointsToWin?: number } | null
   const gamesPerMatch = rawFormat?.gamesPerMatch ?? 4
   const tiebreakEnabled = rawFormat?.tiebreakEnabled ?? false
+  const pointsToWin = rawScoring?.pointsToWin ?? 11
 
   return (
     <ScoreEntryForm
@@ -46,6 +48,7 @@ export default async function ScoreEntryPage({ params }: Props) {
       awayTeam={match.awayTeam}
       gamesPerMatch={gamesPerMatch}
       tiebreakEnabled={tiebreakEnabled}
+      pointsToWin={pointsToWin}
       existingGames={match.games.map((g) => ({
         gameNumber: g.gameNumber,
         homeScore: g.homeScore ?? 0,

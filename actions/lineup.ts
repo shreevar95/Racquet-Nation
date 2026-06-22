@@ -138,6 +138,29 @@ export async function lockLineups(
   return { success: true }
 }
 
+export async function openAllMatchesForLineup(
+  tournamentId: string,
+): Promise<{ success: boolean; count?: number; error?: string }> {
+  const user = await requireAuth()
+  if (!(await isTournamentAdmin(user.id, tournamentId))) {
+    return { success: false, error: 'Not authorized' }
+  }
+
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { slug: true },
+  })
+  if (!tournament) return { success: false, error: 'Tournament not found' }
+
+  const result = await prisma.match.updateMany({
+    where: { tournamentId, status: 'UPCOMING' },
+    data: { status: 'OPEN_FOR_SUBMISSION' },
+  })
+
+  revalidatePath(`/manage/${tournament.slug}/lineups`)
+  return { success: true, count: result.count }
+}
+
 export async function openLineupSubmission(
   matchId: string,
 ): Promise<{ success: boolean; error?: string }> {

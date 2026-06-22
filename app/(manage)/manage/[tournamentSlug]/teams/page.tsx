@@ -12,6 +12,8 @@ import { RandomiseTeamsButton } from './RandomiseTeamsButton'
 import { SetCaptainButton } from './SetCaptainButton'
 import { MovePlayerButton } from './MovePlayerButton'
 import { EditTeamNameButton } from './EditTeamNameButton'
+import { EditTeamAvatarButton } from './EditTeamAvatarButton'
+import { TeamAvatar } from '@/components/ui/team-avatar'
 import { DeleteTeamButton } from './DeleteTeamButton'
 
 interface Props {
@@ -63,6 +65,7 @@ export default async function TeamsPage({ params }: Props) {
         include: {
           player: { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },
         },
+        orderBy: { createdAt: 'asc' },
       })
     : []
 
@@ -116,15 +119,30 @@ export default async function TeamsPage({ params }: Props) {
       <div className="space-y-4">
         {visibleTeams.map((team) => {
           const canEditThisTeam = isAdmin || team.id === captainedTeam?.id
+          const ratedMembers = team.memberships.filter(m => m.player.selfRating !== null)
+          const avgRating = ratedMembers.length > 0
+            ? (ratedMembers.reduce((s, m) => s + m.player.selfRating!, 0) / ratedMembers.length).toFixed(1)
+            : null
           return (
             <div key={team.id} className="rounded-lg border border-border bg-surface-raised p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {canEditThisTeam ? (
-                    <EditTeamNameButton teamId={team.id} currentName={team.name} />
-                  ) : null}
-                  <div className="min-w-0">
-                    <p className="font-semibold text-text-primary truncate">{team.name}</p>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <TeamAvatar name={team.name} logoUrl={team.logoUrl} primaryColor={team.primaryColor} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-text-primary truncate">{team.name}</p>
+                      {canEditThisTeam && (
+                        <EditTeamNameButton teamId={team.id} currentName={team.name} />
+                      )}
+                      {canEditThisTeam && (
+                        <EditTeamAvatarButton
+                          teamId={team.id}
+                          teamName={team.name}
+                          currentLogoUrl={team.logoUrl ?? null}
+                          currentColor={team.primaryColor ?? null}
+                        />
+                      )}
+                    </div>
                     {team.group && (
                       <p className="text-xs text-text-muted">{team.group.name}</p>
                     )}
@@ -134,6 +152,9 @@ export default async function TeamsPage({ params }: Props) {
                   <span className={`text-xs font-medium ${team.memberships.length > tournament.playersPerTeam ? 'text-red-400' : team.memberships.length === tournament.playersPerTeam ? 'text-success' : 'text-text-muted'}`}>
                     {team.memberships.length} / {tournament.playersPerTeam}
                   </span>
+                  {avgRating !== null && (
+                    <span className="text-success text-xs font-semibold">· ★ {avgRating}</span>
+                  )}
                   {isAdmin && (
                     <DeleteTeamButton teamId={team.id} teamName={team.name} />
                   )}
@@ -150,6 +171,9 @@ export default async function TeamsPage({ params }: Props) {
                       size="xs"
                     />
                     <span className="text-sm text-text-primary flex-1">{m.player.user.name}</span>
+                    <span className="w-10 text-right shrink-0 text-success text-xs font-semibold">
+                      {m.player.selfRating?.toFixed(1) ?? '—'}
+                    </span>
                     {isAdmin && (
                       <MovePlayerButton
                         playerId={m.player.id}

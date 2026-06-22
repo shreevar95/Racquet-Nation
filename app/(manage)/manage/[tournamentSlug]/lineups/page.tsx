@@ -6,6 +6,7 @@ import { canManageTournament } from '@/lib/permissions'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, formatTime } from '@/lib/utils'
 import { LineupControls } from './LineupControls'
+import { OpenAllButton } from './OpenAllButton'
 
 interface Props {
   params: Promise<{ tournamentSlug: string }>
@@ -43,9 +44,15 @@ export default async function LineupsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-text-primary">Lineups</h1>
-        <p className="text-sm text-text-secondary">{tournament.name}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-text-primary">Lineups</h1>
+          <p className="text-sm text-text-secondary">{tournament.name}</p>
+        </div>
+        <OpenAllButton
+          tournamentId={tournament.id}
+          upcomingCount={tournament.matches.filter((m) => m.status === 'UPCOMING').length}
+        />
       </div>
 
       <div className="space-y-3">

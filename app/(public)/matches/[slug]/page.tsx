@@ -43,7 +43,7 @@ export default async function MatchPage({ params }: Props) {
     include: {
       homeTeam: { select: { id: true, name: true, slug: true, logoUrl: true } },
       awayTeam: { select: { id: true, name: true, slug: true, logoUrl: true } },
-      tournament: { select: { name: true, slug: true } },
+      tournament: { select: { id: true, name: true, slug: true } },
       games: { orderBy: { gameNumber: 'asc' } },
       lineups: {
         include: {
@@ -70,6 +70,13 @@ export default async function MatchPage({ params }: Props) {
 
   const visibility = await getLineupVisibility(match.id, requesterId)
 
+  // Check if the current user can enter/edit scores for this tournament
+  let canEdit = false
+  if (requesterId) {
+    const { canEnterScores } = await import('@/lib/permissions')
+    canEdit = await canEnterScores(requesterId, match.tournamentId)
+  }
+
   // Determine if the current user is a captain who needs to submit a lineup
   let submitLineupTeamId: string | null = null
   const lineupStatuses = ['OPEN_FOR_SUBMISSION', 'TIEBREAK_REQUIRED']
@@ -85,10 +92,20 @@ export default async function MatchPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-      {/* Breadcrumb */}
-      <Link href={`/tournaments/${match.tournament.slug}`} className="text-sm text-brand-400 hover:text-brand-300">
-        ← {match.tournament.name}
-      </Link>
+      {/* Breadcrumb + admin edit */}
+      <div className="flex items-center justify-between">
+        <Link href={`/tournaments/${match.tournament.slug}/schedule`} className="text-sm text-brand-400 hover:text-brand-300">
+          ← {match.tournament.name}
+        </Link>
+        {canEdit && (
+          <Link
+            href={`/manage/${match.tournament.slug}/scoring/${match.id}`}
+            className="text-xs font-bold text-brand-400 hover:text-brand-300 border border-brand-500/40 rounded-md px-3 py-1.5 transition-colors"
+          >
+            Edit Scores
+          </Link>
+        )}
+      </div>
 
       {/* Scoreboard */}
       <div className="rounded-xl border border-border bg-surface-raised p-6 space-y-4">

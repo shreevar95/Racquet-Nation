@@ -2,8 +2,12 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth'
+import { isTeamCaptain, canManageTournament } from '@/lib/permissions'
 import { Avatar } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { EditTeamNameButton } from '@/app/(manage)/manage/[tournamentSlug]/teams/EditTeamNameButton'
+import { EditTeamAvatarButton } from '@/app/(manage)/manage/[tournamentSlug]/teams/EditTeamAvatarButton'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -18,8 +22,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   })
   return { title: team ? `${team.name} · ${team.tournament.name}` : 'Team' }
 }
-
-export const revalidate = 300
 
 export default async function PublicTeamPage({ params }: Props) {
   const { slug } = await params
@@ -48,6 +50,11 @@ export default async function PublicTeamPage({ params }: Props) {
   })
   if (!team) notFound()
 
+  const currentUser = await getCurrentUser()
+  const canEdit = currentUser
+    ? (await isTeamCaptain(currentUser.id, team.id)) || (await canManageTournament(currentUser.id, team.tournamentId))
+    : false
+
   const allResults = [
     ...team.homeMatches.map((m) => ({
       opponent: m.awayTeam.name,
@@ -72,18 +79,34 @@ export default async function PublicTeamPage({ params }: Props) {
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-xl border border-border bg-surface-overlay flex items-center justify-center shrink-0">
+          <div
+            className="h-14 w-14 rounded-xl border border-border flex items-center justify-center shrink-0 overflow-hidden"
+            style={{ background: team.primaryColor ?? '#1c2e44' }}
+          >
             {team.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={team.logoUrl} alt={team.name} className="h-full w-full object-cover rounded-xl" />
+              <img src={team.logoUrl} alt={team.name} className="h-full w-full object-cover" />
             ) : (
-              <span className="text-sm font-black text-text-muted">
+              <span className="text-sm font-black text-white">
                 {team.name.slice(0, 2).toUpperCase()}
               </span>
             )}
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-text-primary">{team.name}</h1>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-black text-text-primary">{team.name}</h1>
+              {canEdit && (
+                <div className="flex items-center gap-1.5">
+                  <EditTeamNameButton teamId={team.id} currentName={team.name} />
+                  <EditTeamAvatarButton
+                    teamId={team.id}
+                    teamName={team.name}
+                    currentLogoUrl={team.logoUrl ?? null}
+                    currentColor={team.primaryColor ?? null}
+                  />
+                </div>
+              )}
+            </div>
             <Link href={`/tournaments/${team.tournament.slug}`} className="text-sm text-brand-400 hover:text-brand-300">
               {team.tournament.name}
             </Link>

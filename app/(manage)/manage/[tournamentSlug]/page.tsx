@@ -6,8 +6,9 @@ import { requireAuth } from '@/lib/auth'
 import { canManageTournament } from '@/lib/permissions'
 import { Button } from '@/components/ui/button'
 import { formatDate, formatTime } from '@/lib/utils'
-import { publishTournament } from '@/actions/tournament'
+import { publishTournament, closeRegistration, reopenRegistration } from '@/actions/tournament'
 import { CancelTournamentButton } from './CancelTournamentButton'
+import { CancelledTournamentActions } from '@/app/(admin)/admin/tournaments/CancelledTournamentActions'
 
 interface Props {
   params: Promise<{ tournamentSlug: string }>
@@ -61,7 +62,7 @@ export default async function ManageOverviewPage({ params }: Props) {
 
       {/* Publish CTA */}
       {tournament.status === 'DRAFT' && (
-        <div className="rounded-lg border border-brand-500/40 bg-brand-500/8 p-5 flex items-center justify-between gap-4">
+        <div className="rounded-lg border border-brand-500/40 bg-brand-500/8 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <p className="font-display font-bold text-base uppercase text-text-primary">Draft — Not Published</p>
             <p className="text-sm text-text-secondary mt-0.5">
@@ -72,8 +73,48 @@ export default async function ManageOverviewPage({ params }: Props) {
             'use server'
             await publishTournament(tournament.id)
           }}>
-            <Button type="submit" className="font-display font-bold uppercase tracking-wide shrink-0">
+            <Button type="submit" className="font-display font-bold uppercase tracking-wide w-full sm:w-auto">
               Publish
+            </Button>
+          </form>
+        </div>
+      )}
+
+      {/* Close registration CTA */}
+      {tournament.status === 'REGISTRATION_OPEN' && (
+        <div className="rounded-lg border border-success/30 bg-success-bg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-success">Registration is open</p>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Close the waitlist to stop accepting new applicants.
+            </p>
+          </div>
+          <form action={async () => {
+            'use server'
+            await closeRegistration(tournament.id)
+          }}>
+            <Button type="submit" variant="outline" size="sm" className="w-full sm:w-auto">
+              Close Registration
+            </Button>
+          </form>
+        </div>
+      )}
+
+      {/* Re-open registration CTA */}
+      {tournament.status === 'REGISTRATION_CLOSED' && (
+        <div className="rounded-lg border border-border bg-surface-raised p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-text-primary">Registration is closed</p>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Re-open to accept more applicants.
+            </p>
+          </div>
+          <form action={async () => {
+            'use server'
+            await reopenRegistration(tournament.id)
+          }}>
+            <Button type="submit" variant="outline" size="sm" className="w-full sm:w-auto">
+              Re-open Registration
             </Button>
           </form>
         </div>
@@ -113,11 +154,11 @@ export default async function ManageOverviewPage({ params }: Props) {
           { label: 'Matches',       value: tournament._count.matches,       href: 'scoring' },
         ].map((stat) => (
           <Link key={stat.href} href={`/manage/${tournamentSlug}/${stat.href}`}>
-            <div className="rounded-lg bg-surface-raised border border-border p-4 text-center hover:border-brand-500/50 transition-colors group">
-              <p className="font-display font-black text-3xl text-text-primary leading-none group-hover:text-brand-400 transition-colors">
+            <div className="rounded-lg bg-surface-raised border border-border p-3 sm:p-4 text-center hover:border-brand-500/50 transition-colors group">
+              <p className="font-display font-black text-2xl sm:text-3xl text-text-primary leading-none group-hover:text-brand-400 transition-colors">
                 {stat.value}
               </p>
-              <p className="text-xs text-text-muted uppercase tracking-wider mt-1.5">{stat.label}</p>
+              <p className="text-[10px] sm:text-xs text-text-muted uppercase tracking-wide mt-1.5 leading-tight">{stat.label}</p>
             </div>
           </Link>
         ))}
@@ -138,7 +179,7 @@ export default async function ManageOverviewPage({ params }: Props) {
               <Link
                 key={m.id}
                 href={`/manage/${tournamentSlug}/scoring/${m.id}`}
-                className="flex items-center justify-between rounded-lg border border-border bg-surface-raised p-4 hover:border-brand-500/50 transition-colors group border-l-[3px] border-l-brand-500/40 hover:border-l-brand-500"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-border bg-surface-raised p-4 hover:border-brand-500/50 transition-colors group border-l-[3px] border-l-brand-500/40 hover:border-l-brand-500"
               >
                 <div>
                   <p className="font-semibold text-text-primary group-hover:text-brand-400 transition-colors">
@@ -148,7 +189,7 @@ export default async function ManageOverviewPage({ params }: Props) {
                     <p className="text-xs text-text-muted mt-0.5">{formatTime(m.scheduledAt)}</p>
                   )}
                 </div>
-                <Button size="sm" className="font-display font-bold uppercase tracking-wide shrink-0">
+                <Button size="sm" className="font-display font-bold uppercase tracking-wide w-full sm:w-auto">
                   Enter Score
                 </Button>
               </Link>
@@ -158,13 +199,16 @@ export default async function ManageOverviewPage({ params }: Props) {
 
       {/* Cancelled banner */}
       {tournament.status === 'CANCELLED' && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/8 p-4 text-center">
-          <p className="font-display font-bold uppercase text-red-400 text-sm tracking-wide">
-            Tournament Cancelled
-          </p>
-          <p className="text-xs text-text-secondary mt-1">
-            This tournament has been cancelled and is no longer publicly listed.
-          </p>
+        <div className="rounded-lg border border-red-500/30 bg-red-500/8 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="font-display font-bold uppercase text-red-400 text-sm tracking-wide">
+              Tournament Cancelled
+            </p>
+            <p className="text-xs text-text-secondary mt-1">
+              Revive to restore as Draft, or permanently delete.
+            </p>
+          </div>
+          <CancelledTournamentActions tournamentId={tournament.id} tournamentName={tournament.name} />
         </div>
       )}
 
@@ -205,8 +249,8 @@ export default async function ManageOverviewPage({ params }: Props) {
                           </td>
                           <td className="px-2 py-2.5 font-semibold text-text-primary">{row.team.name}</td>
                           <td className="px-2 py-2.5 text-center text-text-secondary">{row.matchesPlayed}</td>
-                          <td className="px-2 py-2.5 text-center text-text-secondary">{row.matchesWon}</td>
-                          <td className="px-2 py-2.5 text-center text-text-secondary">{row.matchesLost}</td>
+                          <td className="px-2 py-2.5 text-center text-success font-medium">{row.matchesWon}</td>
+                          <td className="px-2 py-2.5 text-center text-error">{row.matchesLost}</td>
                           <td className="px-2 py-2.5 text-center text-text-secondary">{row.gamesWon}</td>
                           <td className="px-2 py-2.5 text-center text-text-secondary">{row.gamesLost}</td>
                           <td className="px-2 py-2.5 text-center font-black text-brand-400 font-display">{row.points}</td>

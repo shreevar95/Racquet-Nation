@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
+import { TeamAvatar } from '@/components/ui/team-avatar'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -19,7 +20,7 @@ export default async function StandingsPage({ params }: Props) {
       groups: {
         include: {
           standings: {
-            include: { team: { select: { id: true, name: true, slug: true, logoUrl: true } } },
+            include: { team: { select: { id: true, name: true, slug: true, logoUrl: true, primaryColor: true } } },
             orderBy: { position: 'asc' },
           },
         },
@@ -44,13 +45,14 @@ export default async function StandingsPage({ params }: Props) {
           <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">{group.name}</p>
           <div className="rounded-lg border border-border overflow-hidden">
             {/* Table header */}
-            <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] gap-2 px-3 py-2 border-b border-border bg-surface text-xs font-semibold text-text-muted">
-              <span>#</span>
+            <div className="grid grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem] sm:grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem_3.5rem_2.5rem] gap-x-2 px-3 py-2 border-b border-border bg-surface text-xs font-semibold text-text-muted">
+              <span className="text-center">#</span>
               <span>Team</span>
-              <span className="text-center">MP</span>
+              <span className="text-center hidden sm:block">MP</span>
               <span className="text-center">W</span>
+              <span className="text-center">D</span>
               <span className="text-center">L</span>
-              <span className="text-center">GD</span>
+              <span className="text-center hidden sm:block">GD</span>
               <span className="text-center font-bold">Pts</span>
             </div>
             {/* Rows */}
@@ -58,22 +60,24 @@ export default async function StandingsPage({ params }: Props) {
               <div
                 key={row.teamId}
                 className={[
-                  'grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] gap-2 px-3 py-2.5 border-b border-border last:border-0 items-center text-sm',
+                  'grid grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem] sm:grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem_3.5rem_2.5rem] gap-x-2 px-3 py-2.5 border-b border-border last:border-0 items-center text-sm',
                   row.qualificationStatus === 'QUALIFIED' ? 'bg-success-bg/30' : '',
                   row.qualificationStatus === 'ELIMINATED' ? 'opacity-60' : '',
                 ].join(' ')}
               >
-                <span className="w-5 font-bold text-text-muted text-center">{row.position}</span>
+                <span className="font-bold text-text-muted text-center">{row.position}</span>
                 <Link
                   href={`/teams/${row.team.slug}`}
-                  className="font-medium text-text-primary hover:text-brand-400 transition-colors truncate"
+                  className="flex items-center gap-2 font-medium text-text-primary hover:text-brand-400 transition-colors min-w-0"
                 >
-                  {row.team.name}
+                  <TeamAvatar name={row.team.name} logoUrl={row.team.logoUrl} primaryColor={row.team.primaryColor} size="xs" />
+                  <span className="truncate">{row.team.name}</span>
                 </Link>
-                <span className="text-center text-text-muted">{row.matchesPlayed}</span>
+                <span className="text-center text-text-muted hidden sm:block">{row.matchesPlayed}</span>
                 <span className="text-center text-success font-medium">{row.matchesWon}</span>
+                <span className="text-center text-text-muted">{row.matchesDrawn}</span>
                 <span className="text-center text-error">{row.matchesLost}</span>
-                <span className="text-center text-text-secondary">
+                <span className="text-center text-text-secondary hidden sm:block">
                   {row.gameDifferential > 0 ? `+${row.gameDifferential}` : row.gameDifferential}
                 </span>
                 <span className="text-center font-bold text-text-primary">{row.points}</span>

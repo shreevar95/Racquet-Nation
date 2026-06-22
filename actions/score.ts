@@ -45,7 +45,11 @@ export async function savePartialScores(
   const user = await requireAuth()
   const match = await prisma.match.findUnique({
     where: { id: parsed.data.matchId },
-    select: { tournamentId: true, status: true },
+    select: {
+      tournamentId: true,
+      status: true,
+      tournament: { select: { slug: true } },
+    },
   })
   if (!match) return { success: false, error: 'Match not found' }
   if (!(await canEnterScores(user.id, match.tournamentId))) {
@@ -71,6 +75,8 @@ export async function savePartialScores(
     })
   }
 
+  revalidatePath(`/manage/${match.tournament.slug}/scoring`)
+
   return { success: true }
 }
 
@@ -78,13 +84,13 @@ export async function enterMatchScores(
   input: z.infer<typeof EnterScoresSchema>,
 ): Promise<{ success: boolean; requiresTiebreak?: boolean; error?: string }> {
   const parsed = EnterScoresSchema.safeParse(input)
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message }
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
 
   const user = await requireAuth()
   const match = await prisma.match.findUnique({
     where: { id: parsed.data.matchId },
     include: {
-      tournament: { select: { matchFormat: true, standingsConfig: true, slug: true, name: true } },
+      tournament: { select: { matchFormat: true, scoringConfig: true, standingsConfig: true, slug: true, name: true } },
       homeTeam: { select: { name: true } },
       awayTeam: { select: { name: true } },
     },
@@ -94,98 +100,108 @@ export async function enterMatchScores(
     return { success: false, error: 'Not authorized' }
   }
 
-  const rawFormat = match.tournament.matchFormat as { gamesPerMatch?: number; tiebreakEnabled?: boolean } | null
-  const matchFormat = {
-    gamesPerMatch: rawFormat?.gamesPerMatch ?? 4,
-    tiebreakEnabled: rawFormat?.tiebreakEnabled ?? false,
-  }
+  try {
+    const rawFormat = match.tournament.matchFormat as { gamesPerMatch?: number; tiebreakEnabled?: boolean } | null
+    const scoringCfg = match.tournament.scoringConfig as { pointsToWin?: number } | null
+    const pointsToWin = scoringCfg?.pointsToWin ?? 11
+    const matchFormat = {
+      gamesPerMatch: rawFormat?.gamesPerMatch ?? 4,
+      tiebreakEnabled: rawFormat?.tiebreakEnabled ?? false,
+    }
 
-  // Determine winner per game
-  let homeTeamScore = 0
-  let awayTeamScore = 0
-  const gameUpdates = parsed.data.games.map((g) => {
-    const winnerId =
-      g.homeScore > g.awayScore
+    // Proper game winner: first to pointsToWin, win by 2; no deuce = exactly pointsToWin; deuce = loser + 2
+    function isValidFinalScore(w: number, l: number): boolean {
+      if (w < pointsToWin) return false
+      if (w - l < 2) return false
+      if (l <= pointsToWin - 2) return w === pointsToWin
+      return w === l + 2
+    }
+
+    // Determine winner per game
+    let homeTeamScore = 0
+    let awayTeamScore = 0
+    const gameUpdates = parsed.data.games.map((g) => {
+      const homeWins = isValidFinalScore(g.homeScore, g.awayScore)
+      const awayWins = isValidFinalScore(g.awayScore, g.homeScore)
+      const winnerId = homeWins ? match.homeTeamId : awayWins ? match.awayTeamId : null
+      if (winnerId === match.homeTeamId) homeTeamScore++
+      else if (winnerId === match.awayTeamId) awayTeamScore++
+      return { ...g, winnerId }
+    })
+
+    // Upsert game records
+    await Promise.all(
+      gameUpdates.map((g) =>
+        prisma.matchGame.upsert({
+          where: { matchId_gameNumber: { matchId: parsed.data.matchId, gameNumber: g.gameNumber } },
+          update: { homeScore: g.homeScore, awayScore: g.awayScore, winnerId: g.winnerId },
+          create: {
+            matchId: parsed.data.matchId,
+            gameNumber: g.gameNumber,
+            homeScore: g.homeScore,
+            awayScore: g.awayScore,
+            winnerId: g.winnerId,
+          },
+        }),
+      ),
+    )
+
+    // Determine match winner
+    const requiresTiebreak =
+      matchFormat.tiebreakEnabled &&
+      homeTeamScore === awayTeamScore &&
+      parsed.data.games.length === matchFormat.gamesPerMatch
+
+    const matchWinnerId =
+      homeTeamScore > awayTeamScore
         ? match.homeTeamId
-        : g.awayScore > g.homeScore
+        : awayTeamScore > homeTeamScore
           ? match.awayTeamId
           : null
-    if (winnerId === match.homeTeamId) homeTeamScore++
-    else if (winnerId === match.awayTeamId) awayTeamScore++
-    return { ...g, winnerId }
-  })
 
-  // Upsert game records
-  await Promise.all(
-    gameUpdates.map((g) =>
-      prisma.matchGame.upsert({
-        where: { matchId_gameNumber: { matchId: parsed.data.matchId, gameNumber: g.gameNumber } },
-        update: { homeScore: g.homeScore, awayScore: g.awayScore, winnerId: g.winnerId },
-        create: {
-          matchId: parsed.data.matchId,
-          gameNumber: g.gameNumber,
-          homeScore: g.homeScore,
-          awayScore: g.awayScore,
-          winnerId: g.winnerId,
-        },
-      }),
-    ),
-  )
-
-  // Determine match winner
-  const requiresTiebreak =
-    matchFormat.tiebreakEnabled &&
-    homeTeamScore === awayTeamScore &&
-    parsed.data.games.length === matchFormat.gamesPerMatch
-
-  const matchWinnerId =
-    homeTeamScore > awayTeamScore
-      ? match.homeTeamId
-      : awayTeamScore > homeTeamScore
-        ? match.awayTeamId
-        : null
-
-  // If all games have been submitted via the Confirm button, the match is resolved.
-  // A draw (no matchWinnerId) with no tiebreak enabled still counts as COMPLETED.
-  const allGamesSubmitted = parsed.data.games.length >= matchFormat.gamesPerMatch
-  const newStatus = requiresTiebreak
-    ? 'TIEBREAK_REQUIRED'
-    : allGamesSubmitted
-      ? 'COMPLETED'
-      : matchWinnerId
+    const allGamesSubmitted = parsed.data.games.length >= matchFormat.gamesPerMatch
+    const newStatus = requiresTiebreak
+      ? 'TIEBREAK_REQUIRED'
+      : allGamesSubmitted
         ? 'COMPLETED'
-        : 'IN_PROGRESS'
+        : matchWinnerId
+          ? 'COMPLETED'
+          : 'IN_PROGRESS'
 
-  await prisma.match.update({
-    where: { id: parsed.data.matchId },
-    data: {
-      homeTeamScore,
-      awayTeamScore,
-      winnerId: matchWinnerId,
-      isTiebreak: requiresTiebreak,
-      status: newStatus,
-      ...(newStatus === 'COMPLETED' && { completedAt: new Date() }),
-    },
-  })
-
-  // Recalculate standings + push result if completed
-  if (newStatus === 'COMPLETED') {
-    await recalculateStandings(match.tournamentId)
-    const resultLine =
-      matchWinnerId
-        ? `${homeTeamScore > awayTeamScore ? match.homeTeam.name : match.awayTeam.name} wins ${homeTeamScore}–${awayTeamScore}`
-        : `Draw ${homeTeamScore}–${awayTeamScore}`
-    await pushToTournamentPlayers(match.tournamentId, {
-      title: `Result — ${match.homeTeam.name} vs ${match.awayTeam.name}`,
-      body: `${resultLine}. Standings updated.`,
-      url: `/tournaments/${match.tournament.slug}/results`,
-      tag: `result-${match.id}`,
+    await prisma.match.update({
+      where: { id: parsed.data.matchId },
+      data: {
+        homeTeamScore,
+        awayTeamScore,
+        winnerId: matchWinnerId,
+        isTiebreak: requiresTiebreak,
+        status: newStatus,
+        ...(newStatus === 'COMPLETED' && { completedAt: new Date() }),
+      },
     })
+
+    // Recalculate standings + push result if completed
+    if (newStatus === 'COMPLETED') {
+      await recalculateStandings(match.tournamentId)
+      const resultLine =
+        matchWinnerId
+          ? `${homeTeamScore > awayTeamScore ? match.homeTeam.name : match.awayTeam.name} wins ${homeTeamScore}–${awayTeamScore}`
+          : `Draw ${homeTeamScore}–${awayTeamScore}`
+      await pushToTournamentPlayers(match.tournamentId, {
+        title: `Result — ${match.homeTeam.name} vs ${match.awayTeam.name}`,
+        body: `${resultLine}. Standings updated.`,
+        url: `/tournaments/${match.tournament.slug}/results`,
+        tag: `result-${match.id}`,
+      })
+    }
+
+    revalidatePath(`/manage/${match.tournament.slug}/scoring`)
+    revalidatePath(`/tournaments/${match.tournament.slug}/standings`)
+    revalidatePath(`/tournaments/${match.tournament.slug}/results`)
+
+    return { success: true, requiresTiebreak }
+  } catch (err) {
+    console.error('[enterMatchScores]', err)
+    return { success: false, error: 'Failed to save scores' }
   }
-
-  revalidatePath(`/manage/${match.tournament.slug}/scoring`)
-  revalidatePath(`/tournaments/${match.tournament.slug}/standings`)
-  revalidatePath(`/tournaments/${match.tournament.slug}/results`)
-
-  return { success: true, requiresTiebreak }
 }

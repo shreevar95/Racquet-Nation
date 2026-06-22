@@ -56,6 +56,12 @@ export function TopNav({ transparent = false }: TopNavProps) {
 
           <Show when="signed-in">
             <Link
+              href="/my-teams"
+              className="hidden sm:block text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors px-3 py-1.5 rounded-md hover:bg-surface-raised"
+            >
+              My Teams
+            </Link>
+            <Link
               href="/dashboard"
               className="hidden sm:block text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors px-3 py-1.5 rounded-md hover:bg-surface-raised"
             >

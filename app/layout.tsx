@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} h-full`}
       >
-        <body className="h-full min-h-screen bg-surface text-text-primary antialiased">
+        <body className="h-full min-h-screen text-text-primary antialiased">
           {children}
           <Toaster
             position="top-center"

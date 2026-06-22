@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Minus, Plus, ArrowLeft, Check } from 'lucide-react'
+import { Minus, Plus, ArrowLeft, Check, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { enterMatchScores, savePartialScores, getMatchScores } from '@/actions/score'
 
@@ -17,20 +17,41 @@ interface Props {
   awayTeam: Team
   gamesPerMatch: number
   tiebreakEnabled: boolean
+  pointsToWin: number
   existingGames: GameScore[]
 }
 
-// A game is won when one team reaches 11+ with a 2-point gap
-function gameWinner(home: number, away: number): 'home' | 'away' | null {
-  const lead = Math.abs(home - away)
-  if (lead < 2) return null
-  if (home >= 11 && home > away) return 'home'
-  if (away >= 11 && away > home) return 'away'
+// A score is a legal final score for a game:
+//   - winner reaches pointsToWin, wins by ≥ 2
+//   - no deuce: winner must be exactly pointsToWin (can't overshoot)
+//   - deuce (loser ≥ pointsToWin - 1): winner must be exactly loser + 2
+function isValidFinalScore(w: number, l: number, p: number): boolean {
+  if (w < p) return false
+  if (w - l < 2) return false
+  if (l <= p - 2) return w === p
+  return w === l + 2
+}
+
+function gameWinner(home: number, away: number, p: number): 'home' | 'away' | null {
+  if (isValidFinalScore(home, away, p)) return 'home'
+  if (isValidFinalScore(away, home, p)) return 'away'
   return null
 }
 
-function isGameComplete(home: number, away: number): boolean {
-  return gameWinner(home, away) !== null
+// Score is impossible (e.g. 14-8 in a game to 11)
+function isImpossibleScore(home: number, away: number, p: number): boolean {
+  if (home === 0 && away === 0) return false
+  const w = Math.max(home, away)
+  const l = Math.min(home, away)
+  if (w < p) return false // still in progress, not impossible yet
+  // Winner has reached p — check if the score could legally arise
+  if (l <= p - 2) return w !== p // no deuce: winner must be exactly p
+  // Deuce territory: diff must be exactly 2
+  return w - l !== 2
+}
+
+function isGameComplete(home: number, away: number, p: number): boolean {
+  return gameWinner(home, away, p) !== null
 }
 
 // Inline score input — supports direct typing + shows the number large
@@ -38,10 +59,12 @@ function ScoreInput({
   value,
   onChange,
   winner,
+  invalid,
 }: {
   value: number
   onChange: (n: number) => void
   winner: boolean
+  invalid?: boolean
 }) {
   const [raw, setRaw] = useState(String(value))
 
@@ -69,7 +92,7 @@ function ScoreInput({
       }}
       className={[
         'text-4xl font-black w-16 text-center tabular-nums bg-transparent border-b-2 outline-none transition-colors',
-        winner ? 'text-success border-success/40' : 'text-text-primary border-border focus:border-brand-500',
+        invalid ? 'text-error border-error/60' : winner ? 'text-success border-success/40' : 'text-text-primary border-border focus:border-brand-500',
       ].join(' ')}
     />
   )
@@ -82,6 +105,7 @@ export function ScoreEntryForm({
   awayTeam,
   gamesPerMatch,
   tiebreakEnabled,
+  pointsToWin,
   existingGames,
 }: Props) {
   const router = useRouter()
@@ -166,35 +190,32 @@ export function ScoreEntryForm({
   useEffect(() => {
     if (!tiebreakEnabled) return
     const regular = scores.slice(0, gamesPerMatch)
-    const hLeads = regular.filter((g) => g.homeScore > g.awayScore).length
-    const aLeads = regular.filter((g) => g.awayScore > g.homeScore).length
-    const isDraw = hLeads === aLeads && hLeads + aLeads === gamesPerMatch
+    const hWins = regular.filter((g) => gameWinner(g.homeScore, g.awayScore, pointsToWin) === 'home').length
+    const aWins = regular.filter((g) => gameWinner(g.homeScore, g.awayScore, pointsToWin) === 'away').length
+    const allDone = regular.every((g) => isGameComplete(g.homeScore, g.awayScore, pointsToWin))
+    const isDraw = allDone && hWins === aWins
     if (isDraw && scores.length === gamesPerMatch) {
       setScores((prev) => [...prev, { gameNumber: gamesPerMatch + 1, homeScore: 0, awayScore: 0 }])
     } else if (!isDraw && scores.length > gamesPerMatch) {
       setScores((prev) => prev.slice(0, gamesPerMatch))
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scoreKey, tiebreakEnabled, gamesPerMatch])
+  }, [scoreKey, tiebreakEnabled, gamesPerMatch, pointsToWin])
 
-  // Live match score summary (strict 11+2 rule — for display only)
+  // Live match score summary
   const regularScores = scores.slice(0, gamesPerMatch)
-  const homeWins = regularScores.filter((g) => gameWinner(g.homeScore, g.awayScore) === 'home').length
-  const awayWins = regularScores.filter((g) => gameWinner(g.homeScore, g.awayScore) === 'away').length
+  const homeWins = regularScores.filter((g) => gameWinner(g.homeScore, g.awayScore, pointsToWin) === 'home').length
+  const awayWins = regularScores.filter((g) => gameWinner(g.homeScore, g.awayScore, pointsToWin) === 'away').length
   const hasTiebreakGame = scores.length > gamesPerMatch
   const tiebreakScore = hasTiebreakGame ? scores[gamesPerMatch] : null
-  const tiebreakWinner = tiebreakScore ? gameWinner(tiebreakScore.homeScore, tiebreakScore.awayScore) : null
-  const isTie = homeWins === awayWins && homeWins > 0 && tiebreakEnabled && !hasTiebreakGame
-  const allComplete = regularScores.every((g) => isGameComplete(g.homeScore, g.awayScore))
+  const tiebreakWinner = tiebreakScore ? gameWinner(tiebreakScore.homeScore, tiebreakScore.awayScore, pointsToWin) : null
+  const allComplete = regularScores.every((g) => isGameComplete(g.homeScore, g.awayScore, pointsToWin))
+  const anyImpossible = scores.some((g) => isImpossibleScore(g.homeScore, g.awayScore, pointsToWin))
 
-  // For submit: use simple > comparison so admin isn't blocked by 11+2 rule
-  const homeLeads = regularScores.filter((g) => g.homeScore > g.awayScore).length
-  const awayLeads = regularScores.filter((g) => g.awayScore > g.homeScore).length
-  const hasDecisiveWinner = Math.max(homeLeads, awayLeads) > gamesPerMatch / 2
-  const allScoresEntered = scores.every((g) => g.homeScore > 0 || g.awayScore > 0)
-  // If tiebreak game exists, require it to also have a score
-  const tiebreakComplete = !hasTiebreakGame || (tiebreakScore !== null && (tiebreakScore.homeScore > 0 || tiebreakScore.awayScore > 0))
-  const canSubmit = tiebreakComplete && (allComplete || hasDecisiveWinner || allScoresEntered)
+  // Allow submit when all games have valid final scores and none are impossible
+  const hasDecisiveWinner = Math.max(homeWins, awayWins) > gamesPerMatch / 2
+  const tiebreakComplete = !hasTiebreakGame || (tiebreakScore !== null && isGameComplete(tiebreakScore.homeScore, tiebreakScore.awayScore, pointsToWin))
+  const canSubmit = !anyImpossible && tiebreakComplete && (allComplete || hasDecisiveWinner)
 
   function handleSubmit() {
     startTransition(async () => {
@@ -251,14 +272,21 @@ export function ScoreEntryForm({
         <div className="divide-y divide-border">
           {scores.map((game, i) => {
             const isTiebreakGame = i === gamesPerMatch
-            const winner = gameWinner(game.homeScore, game.awayScore)
+            const winner = gameWinner(game.homeScore, game.awayScore, pointsToWin)
+            const impossible = isImpossibleScore(game.homeScore, game.awayScore, pointsToWin)
             return (
               <div key={game.gameNumber} className={['px-4 py-5', isTiebreakGame ? 'bg-warning-bg/30' : ''].join(' ')}>
                 <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4 text-center">
                   {isTiebreakGame ? '⚡ Tiebreak Game' : `Game ${game.gameNumber}`}
-                  {winner && (
+                  {winner && !impossible && (
                     <span className="text-success ml-2">
                       — {winner === 'home' ? homeTeam.name : awayTeam.name} wins
+                    </span>
+                  )}
+                  {impossible && (
+                    <span className="text-error ml-2 inline-flex items-center gap-1">
+                      <AlertTriangle size={12} />
+                      impossible score
                     </span>
                   )}
                 </p>
@@ -278,7 +306,8 @@ export function ScoreEntryForm({
                       <ScoreInput
                         value={game.homeScore}
                         onChange={(n) => setScore(i, 'home', n)}
-                        winner={winner === 'home'}
+                        winner={winner === 'home' && !impossible}
+                        invalid={impossible}
                       />
                       <button
                         type="button"
@@ -306,7 +335,8 @@ export function ScoreEntryForm({
                       <ScoreInput
                         value={game.awayScore}
                         onChange={(n) => setScore(i, 'away', n)}
-                        winner={winner === 'away'}
+                        winner={winner === 'away' && !impossible}
+                        invalid={impossible}
                       />
                       <button
                         type="button"
@@ -326,12 +356,18 @@ export function ScoreEntryForm({
 
       {/* Bottom submit */}
       <div className="px-4 py-3 border-t border-border pb-safe shrink-0 space-y-2">
-        {!canSubmit && (
-          <p className="text-xs text-text-muted text-center">
-            {scores.filter((g) => isGameComplete(g.homeScore, g.awayScore)).length} / {gamesPerMatch} games complete
+        {anyImpossible && (
+          <p className="text-xs text-error text-center flex items-center justify-center gap-1">
+            <AlertTriangle size={12} />
+            Fix impossible score(s) — game to {pointsToWin}, win by 2
           </p>
         )}
-        {hasDecisiveWinner && !allComplete && (
+        {!canSubmit && !anyImpossible && (
+          <p className="text-xs text-text-muted text-center">
+            {scores.filter((g) => isGameComplete(g.homeScore, g.awayScore, pointsToWin)).length} / {gamesPerMatch} games complete
+          </p>
+        )}
+        {hasDecisiveWinner && !allComplete && !anyImpossible && (
           <p className="text-xs text-text-muted text-center">
             Match decided — {homeWins > awayWins ? homeTeam.name : awayTeam.name} wins {Math.max(homeWins, awayWins)}–{Math.min(homeWins, awayWins)}
           </p>

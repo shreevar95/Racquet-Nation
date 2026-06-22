@@ -28,11 +28,28 @@ export default async function DashboardPage() {
       })
     : []
 
-  // Upcoming matches for teams this user is a member of
+  // Teams this user captains
   const playerProfile = await prisma.playerProfile.findUnique({
     where: { userId: user.id },
     select: { id: true },
   })
+
+  const captainedTeams = playerProfile
+    ? await prisma.teamMembership.findMany({
+        where: { playerId: playerProfile.id, role: 'CAPTAIN' },
+        select: {
+          team: {
+            select: {
+              id: true,
+              name: true,
+              primaryColor: true,
+              logoUrl: true,
+              tournament: { select: { name: true, slug: true, status: true } },
+            },
+          },
+        },
+      })
+    : []
   const upcomingMatches = playerProfile
     ? await prisma.match.findMany({
         where: {
@@ -71,13 +88,52 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* My Teams (captain) */}
+      {captainedTeams.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="h-0.5 w-4 bg-brand-500" />
+            <p className="text-brand-500 text-sm font-black tracking-[0.15em] uppercase font-display">
+              My Teams
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-raised overflow-hidden">
+            <div className="divide-y divide-border">
+              {captainedTeams.map(({ team }) => (
+                <Link
+                  key={team.id}
+                  href={`/manage/${team.tournament.slug}/teams`}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-surface-overlay transition-colors group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className="h-7 w-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold text-white"
+                      style={{ background: team.primaryColor ?? '#1c2e44' }}
+                    >
+                      {team.name.slice(0, 2).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-text-primary group-hover:text-brand-400 transition-colors truncate">
+                        {team.name}
+                      </p>
+                      <p className="text-xs text-text-muted truncate">{team.tournament.name}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-brand-400 font-semibold shrink-0 ml-3">Edit →</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin section */}
       {isAdmin && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <span className="h-0.5 w-4 bg-brand-500" />
-            <p className="text-brand-500 text-xs font-bold tracking-[0.2em] uppercase font-display">
-              Tournament Admin
+            <p className="text-brand-500 text-sm font-black tracking-[0.15em] uppercase font-display">
+              My Tournaments
             </p>
           </div>
 
@@ -111,7 +167,7 @@ export default async function DashboardPage() {
                     <span className={[
                       'text-xs font-bold uppercase shrink-0 ml-3',
                       t.status === 'ACTIVE' ? 'text-brand-500' :
-                      t.status === 'REGISTRATION_OPEN' ? 'text-info' :
+                      t.status === 'REGISTRATION_OPEN' ? 'text-success' :
                       t.status === 'COMPLETED' ? 'text-success' :
                       'text-text-muted',
                     ].join(' ')}>
@@ -129,7 +185,7 @@ export default async function DashboardPage() {
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <span className="h-0.5 w-4 bg-brand-500" />
-          <p className="text-brand-500 text-xs font-bold tracking-[0.2em] uppercase font-display">
+          <p className="text-brand-500 text-sm font-black tracking-[0.15em] uppercase font-display">
             My Matches
           </p>
         </div>

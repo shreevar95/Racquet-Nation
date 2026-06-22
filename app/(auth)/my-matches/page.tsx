@@ -77,7 +77,7 @@ export default async function MyMatchesPage() {
         <p className="text-brand-500 text-xs font-bold tracking-[0.2em] uppercase font-display mb-1">
           Player
         </p>
-        <h1 className="font-display font-black text-4xl uppercase text-text-primary leading-tight">
+        <h1 className="font-display font-black text-5xl uppercase text-text-primary leading-tight">
           My Matches
         </h1>
         <p className="text-text-secondary text-sm mt-1">

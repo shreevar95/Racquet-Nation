@@ -36,12 +36,13 @@ export default async function LineupPage({ params, searchParams }: Props) {
 
   const team = match.homeTeamId === teamId ? match.homeTeam : match.awayTeam
 
-  // Get team roster
+  // Get team roster — ordered for deterministic slot assignment
   const roster = await prisma.teamMembership.findMany({
     where: { teamId },
     include: {
       player: { include: { user: { select: { name: true, avatarUrl: true } } } },
     },
+    orderBy: { joinedAt: 'asc' },
   })
 
   // Existing lineup if already submitted
@@ -51,18 +52,27 @@ export default async function LineupPage({ params, searchParams }: Props) {
   })
 
   const matchFormat = match.tournament.matchFormat as { gamesPerMatch: number; playersPerSide: number; gameTypes?: Record<string, string> }
-  const gameTypes = (match as unknown as { gameTypes?: Record<string, string> }).gameTypes ?? matchFormat.gameTypes ?? {}
+  const gameTypes = (match.gameTypes as Record<string, string> | null) ?? matchFormat.gameTypes ?? {}
+
+  const isEdit = !!existingLineup
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-text-primary">Submit Lineup</h1>
+        <h1 className="text-xl font-bold text-text-primary">
+          {isEdit ? 'Edit Lineup' : 'Submit Lineup'}
+        </h1>
         <p className="text-sm text-text-secondary">
           {team.name} · {match.tournament.name}
         </p>
         <p className="text-xs text-text-muted mt-0.5">
           {match.homeTeam.name} vs {match.awayTeam.name}
         </p>
+        {isEdit && (
+          <p className="text-xs text-brand-400 mt-1">
+            You can update your lineup until the admin closes the submission window.
+          </p>
+        )}
       </div>
 
       <LineupSubmitForm
@@ -75,6 +85,8 @@ export default async function LineupPage({ params, searchParams }: Props) {
           playerId: m.playerId,
           name: m.player.user.name,
           avatarUrl: m.player.user.avatarUrl,
+          rating: m.player.selfRating,
+          gender: m.player.gender as string | null,
         }))}
         existingSlots={existingLineup?.slots ?? []}
       />

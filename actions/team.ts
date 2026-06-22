@@ -13,6 +13,7 @@ const CreateTeamSchema = z.object({
   name: z.string().min(1, 'Team name required').max(80),
   groupId: z.string().optional().nullable(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+  logoUrl: z.string().url().optional().nullable(),
 })
 
 export async function createTeam(
@@ -41,6 +42,7 @@ export async function createTeam(
       slug,
       groupId: parsed.data.groupId ?? null,
       primaryColor: parsed.data.primaryColor ?? null,
+      logoUrl: parsed.data.logoUrl ?? null,
     },
   })
 
@@ -199,109 +201,114 @@ export async function randomiseTeamAssignments(
     return { success: false, assigned: 0, createdTeamIds: [], error: 'Not authorized' }
   }
 
-  const tournament = await prisma.tournament.findUnique({
-    where: { id: tournamentId },
-    select: {
-      slug: true,
-      numTeams: true,
-      playersPerTeam: true,
-      groups: { orderBy: { order: 'asc' } },
-    },
-  })
-  if (!tournament) return { success: false, assigned: 0, createdTeamIds: [], error: 'Tournament not found' }
+  try {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id: tournamentId },
+      select: {
+        slug: true,
+        numTeams: true,
+        playersPerTeam: true,
+        groups: { orderBy: { order: 'asc' } },
+      },
+    })
+    if (!tournament) return { success: false, assigned: 0, createdTeamIds: [], error: 'Tournament not found' }
 
-  if (clearExisting) {
-    await prisma.teamMembership.deleteMany({ where: { team: { tournamentId } } })
-    await prisma.team.updateMany({ where: { tournamentId }, data: { captainId: null } })
-  }
-
-  const unassigned = await prisma.registration.findMany({
-    where: {
-      tournamentId,
-      status: 'APPROVED',
-      player: { teamMemberships: { none: { team: { tournamentId } } } },
-    },
-    select: { player: { select: { id: true, selfRating: true } } },
-  })
-
-  if (unassigned.length === 0) {
-    revalidatePath(`/manage/${tournament.slug}/teams`)
-    return { success: true, assigned: 0, createdTeamIds: [] }
-  }
-
-  // Separate rated and unrated players
-  type Entry = { id: string; rating: number | null }
-  const rated: Entry[] = unassigned
-    .filter((r) => r.player.selfRating !== null)
-    .map((r) => ({ id: r.player.id, rating: r.player.selfRating }))
-    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-
-  const unrated: Entry[] = unassigned
-    .filter((r) => r.player.selfRating === null)
-    .map((r) => ({ id: r.player.id, rating: null }))
-
-  // Fisher-Yates shuffle unrated
-  for (let i = unrated.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[unrated[i], unrated[j]] = [unrated[j], unrated[i]]
-  }
-
-  // Rated players go first (snake draft), unrated appended (random)
-  const ordered = [...rated, ...unrated]
-
-  // Teams must already exist — use autoCreateTeams first
-  let teams = await prisma.team.findMany({
-    where: { tournamentId },
-    select: { id: true, memberships: { select: { playerId: true } } },
-    orderBy: { createdAt: 'asc' },
-  })
-
-  if (teams.length === 0) {
-    return { success: false, assigned: 0, createdTeamIds: [], error: 'Create teams first, then randomise.' }
-  }
-
-  const createdTeamIds: string[] = []
-
-  // Snake draft: even rounds go left→right, odd rounds go right→left
-  // This distributes the highest-rated players evenly across teams
-  let playerIdx = 0
-  let round = 0
-  let assigned = 0
-
-  while (playerIdx < ordered.length) {
-    let assignedInRound = false
-    for (let i = 0; i < teams.length && playerIdx < ordered.length; i++) {
-      const teamIdx = round % 2 === 0 ? i : teams.length - 1 - i
-      const team = teams[teamIdx]
-      if (team.memberships.length < tournament.playersPerTeam) {
-        const playerId = ordered[playerIdx].id
-        const isFirstOnTeam = team.memberships.length === 0
-        const role = isFirstOnTeam ? 'CAPTAIN' : 'PLAYER'
-
-        await prisma.teamMembership.create({ data: { teamId: team.id, playerId, role } })
-
-        if (isFirstOnTeam) {
-          const profile = await prisma.playerProfile.findUnique({
-            where: { id: playerId },
-            select: { userId: true },
-          })
-          if (profile) {
-            await prisma.team.update({ where: { id: team.id }, data: { captainId: profile.userId } })
-          }
-        }
-
-        team.memberships.push({ playerId })
-        assigned++
-        playerIdx++
-        assignedInRound = true
-      }
+    if (clearExisting) {
+      await prisma.teamMembership.deleteMany({ where: { team: { tournamentId } } })
+      await prisma.team.updateMany({ where: { tournamentId }, data: { captainId: null } })
     }
-    round++
-    if (!assignedInRound) break // All teams full
-  }
 
-  revalidatePath(`/manage/${tournament.slug}/teams`)
-  return { success: true, assigned, createdTeamIds }
+    const unassigned = await prisma.registration.findMany({
+      where: {
+        tournamentId,
+        status: 'APPROVED',
+        player: { teamMemberships: { none: { team: { tournamentId } } } },
+      },
+      select: { player: { select: { id: true, selfRating: true } } },
+    })
+
+    if (unassigned.length === 0) {
+      revalidatePath(`/manage/${tournament.slug}/teams`)
+      return { success: true, assigned: 0, createdTeamIds: [] }
+    }
+
+    // Separate rated and unrated players
+    type Entry = { id: string; rating: number | null }
+    const rated: Entry[] = unassigned
+      .filter((r) => r.player.selfRating !== null)
+      .map((r) => ({ id: r.player.id, rating: r.player.selfRating }))
+      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+
+    const unrated: Entry[] = unassigned
+      .filter((r) => r.player.selfRating === null)
+      .map((r) => ({ id: r.player.id, rating: null }))
+
+    // Fisher-Yates shuffle unrated
+    for (let i = unrated.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[unrated[i], unrated[j]] = [unrated[j], unrated[i]]
+    }
+
+    // Rated players go first (snake draft), unrated appended (random)
+    const ordered = [...rated, ...unrated]
+
+    // Teams must already exist — use autoCreateTeams first
+    const teams = await prisma.team.findMany({
+      where: { tournamentId },
+      select: { id: true, memberships: { select: { playerId: true } } },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    if (teams.length === 0) {
+      return { success: false, assigned: 0, createdTeamIds: [], error: 'Create teams first, then randomise.' }
+    }
+
+    const createdTeamIds: string[] = []
+
+    // Snake draft: even rounds go left→right, odd rounds go right→left
+    // This distributes the highest-rated players evenly across teams
+    let playerIdx = 0
+    let round = 0
+    let assigned = 0
+
+    while (playerIdx < ordered.length) {
+      let assignedInRound = false
+      for (let i = 0; i < teams.length && playerIdx < ordered.length; i++) {
+        const teamIdx = round % 2 === 0 ? i : teams.length - 1 - i
+        const team = teams[teamIdx]
+        if (team.memberships.length < tournament.playersPerTeam) {
+          const playerId = ordered[playerIdx].id
+          const isFirstOnTeam = team.memberships.length === 0
+          const role = isFirstOnTeam ? 'CAPTAIN' : 'PLAYER'
+
+          await prisma.teamMembership.create({ data: { teamId: team.id, playerId, role } })
+
+          if (isFirstOnTeam) {
+            const profile = await prisma.playerProfile.findUnique({
+              where: { id: playerId },
+              select: { userId: true },
+            })
+            if (profile) {
+              await prisma.team.update({ where: { id: team.id }, data: { captainId: profile.userId } })
+            }
+          }
+
+          team.memberships.push({ playerId })
+          assigned++
+          playerIdx++
+          assignedInRound = true
+        }
+      }
+      round++
+      if (!assignedInRound) break // All teams full
+    }
+
+    revalidatePath(`/manage/${tournament.slug}/teams`)
+    return { success: true, assigned, createdTeamIds }
+  } catch (err) {
+    console.error('[randomiseTeamAssignments]', err)
+    return { success: false, assigned: 0, createdTeamIds: [], error: 'Failed to assign players' }
+  }
 }
 
 const SnapshotMembershipSchema = z.object({
@@ -490,5 +497,29 @@ export async function removePlayerFromTeam(
   })
 
   revalidatePath(`/manage/${team.tournament.slug}/teams`)
+  return { success: true }
+}
+
+export async function updateTeamAvatar(
+  teamId: string,
+  data: { logoUrl: string | null; primaryColor: string | null },
+): Promise<{ success: boolean; error?: string }> {
+  const user = await requireAuth()
+  const team = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { tournamentId: true, tournament: { select: { slug: true } } },
+  })
+  if (!team) return { success: false, error: 'Team not found' }
+  const canAdmin = await canManageTournament(user.id, team.tournamentId)
+  const canCaptain = await isTeamCaptain(user.id, teamId)
+  if (!canAdmin && !canCaptain) return { success: false, error: 'Not authorized' }
+
+  await prisma.team.update({
+    where: { id: teamId },
+    data: { logoUrl: data.logoUrl, primaryColor: data.primaryColor },
+  })
+
+  revalidatePath(`/manage/${team.tournament.slug}/teams`)
+  revalidatePath(`/teams`)
   return { success: true }
 }

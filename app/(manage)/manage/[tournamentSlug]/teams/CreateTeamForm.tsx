@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TeamAvatarPicker } from '@/components/admin/TeamAvatarPicker'
 import { createTeam } from '@/actions/team'
 
 interface Props {
@@ -16,6 +17,8 @@ export function CreateTeamForm({ tournamentId, groups }: Props) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [groupId, setGroupId] = useState('')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [primaryColor, setPrimaryColor] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
@@ -26,11 +29,15 @@ export function CreateTeamForm({ tournamentId, groups }: Props) {
         tournamentId,
         name: name.trim(),
         groupId: groupId || null,
+        logoUrl,
+        primaryColor,
       })
       if (result.success) {
         toast.success('Team created')
         setName('')
         setGroupId('')
+        setLogoUrl(null)
+        setPrimaryColor(null)
         setOpen(false)
       } else {
         toast.error(result.error)
@@ -47,7 +54,7 @@ export function CreateTeamForm({ tournamentId, groups }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-surface-overlay p-4 space-y-3">
+    <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-surface-overlay p-4 space-y-4">
       <p className="text-sm font-semibold text-text-primary">New Team</p>
       <Input
         label="Team Name"
@@ -56,6 +63,13 @@ export function CreateTeamForm({ tournamentId, groups }: Props) {
         placeholder="The Falcons"
         required
         autoFocus
+      />
+      <TeamAvatarPicker
+        teamName={name}
+        logoUrl={logoUrl}
+        primaryColor={primaryColor}
+        onLogoUrlChange={setLogoUrl}
+        onColorChange={setPrimaryColor}
       />
       {groups.length > 1 && (
         <div className="flex flex-col gap-1.5">

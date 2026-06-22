@@ -12,7 +12,7 @@ export const revalidate = 60
 
 const STATUS_VARIANT: Record<string, 'default' | 'info' | 'success' | 'brand' | 'warning'> = {
   DRAFT: 'default',
-  REGISTRATION_OPEN: 'info',
+  REGISTRATION_OPEN: 'success',
   REGISTRATION_CLOSED: 'warning',
   ACTIVE: 'brand',
   COMPLETED: 'success',

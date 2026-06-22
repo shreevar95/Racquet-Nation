@@ -11,6 +11,8 @@ interface Player {
   playerId: string
   name: string
   avatarUrl: string | null
+  rating: number | null
+  gender: string | null
 }
 
 interface ExistingSlot {
@@ -30,6 +32,93 @@ interface Props {
 }
 
 type SlotKey = `${number}-${number}`
+
+function optimizeLineup(
+  roster: Player[],
+  gamesPerMatch: number,
+  gameTypes: Record<string, string>,
+  defaultPlayersPerSide: number,
+): Record<string, string> {
+  const sorted = [...roster].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+  const males = sorted.filter(p => p.gender === 'MALE')
+  const females = sorted.filter(p => p.gender === 'FEMALE')
+  const open = sorted.filter(p => !p.gender || p.gender === 'OTHER')
+
+  const used = new Set<string>()
+
+  function takeFrom(pool: Player[], n: number): string[] {
+    const taken: string[] = []
+    for (const p of pool) {
+      if (taken.length >= n) break
+      if (!used.has(p.playerId)) {
+        taken.push(p.playerId)
+        used.add(p.playerId)
+      }
+    }
+    return taken
+  }
+
+  function slotsForGame(g: number) {
+    return getPlayersPerSide(gameTypes[String(g)], defaultPlayersPerSide)
+  }
+
+  // Process gender-constrained games first so their specific pools aren't drained
+  const CONSTRAINT_ORDER = ['MENS_SINGLES', 'WOMENS_SINGLES', 'MENS_DOUBLES', 'WOMENS_DOUBLES', 'MIXED_DOUBLES']
+  const gameOrder = Array.from({ length: gamesPerMatch }, (_, i) => i + 1).sort((a, b) => {
+    const tA = gameTypes[String(a)] ?? ''
+    const tB = gameTypes[String(b)] ?? ''
+    const iA = CONSTRAINT_ORDER.indexOf(tA)
+    const iB = CONSTRAINT_ORDER.indexOf(tB)
+    return (iA === -1 ? 99 : iA) - (iB === -1 ? 99 : iB)
+  })
+
+  const assignment: Record<number, string[]> = {}
+  for (let g = 1; g <= gamesPerMatch; g++) assignment[g] = []
+
+  for (const g of gameOrder) {
+    const type = gameTypes[String(g)] ?? ''
+    const slots = slotsForGame(g)
+
+    if (type === 'MIXED_DOUBLES') {
+      const m = takeFrom(males, 1)
+      const f = takeFrom(females, 1)
+      const extra = takeFrom([...open, ...sorted], slots - m.length - f.length)
+      assignment[g] = [...m, ...f, ...extra]
+    } else if (type === 'MENS_DOUBLES' || type === 'MENS_SINGLES') {
+      const picked = takeFrom(males, slots)
+      const fill = takeFrom([...open, ...females, ...sorted], slots - picked.length)
+      assignment[g] = [...picked, ...fill]
+    } else if (type === 'WOMENS_DOUBLES' || type === 'WOMENS_SINGLES') {
+      const picked = takeFrom(females, slots)
+      const fill = takeFrom([...open, ...males, ...sorted], slots - picked.length)
+      assignment[g] = [...picked, ...fill]
+    } else {
+      assignment[g] = takeFrom(sorted, slots)
+    }
+  }
+
+  // Ensure everyone plays: add unassigned players to their best game
+  const unassigned = roster.filter(p => !used.has(p.playerId))
+  for (const player of unassigned) {
+    let bestGame = gameOrder[gameOrder.length - 1]
+    let fewest = Infinity
+    for (let g = 1; g <= gamesPerMatch; g++) {
+      if (assignment[g].length < fewest) {
+        fewest = assignment[g].length
+        bestGame = g
+      }
+    }
+    assignment[bestGame].push(player.playerId)
+  }
+
+  const result: Record<string, string> = {}
+  for (let g = 1; g <= gamesPerMatch; g++) {
+    assignment[g].forEach((pid, idx) => {
+      result[`${g}-${idx + 1}`] = pid
+    })
+  }
+  return result
+}
 
 export function LineupSubmitForm({
   matchId,
@@ -105,11 +194,21 @@ export function LineupSubmitForm({
 
   if (submitted) {
     return (
-      <div className="rounded-lg border border-success/30 bg-success-bg p-6 text-center space-y-2">
-        <p className="text-success font-semibold">Lineup Submitted</p>
-        <p className="text-sm text-text-secondary">
-          Your lineup is locked in. You will be notified when both teams have submitted.
-        </p>
+      <div className="space-y-3">
+        <div className="rounded-lg border border-success/30 bg-success-bg p-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-success font-semibold text-sm">Lineup saved</p>
+            <p className="text-xs text-text-secondary mt-0.5">
+              You can edit it until the admin closes the submission window.
+            </p>
+          </div>
+          <button
+            onClick={() => setSubmitted(false)}
+            className="text-xs font-semibold text-brand-400 hover:text-brand-300 border border-brand-500/40 rounded px-3 py-1.5 transition-colors shrink-0"
+          >
+            Edit Lineup
+          </button>
+        </div>
       </div>
     )
   }
@@ -170,7 +269,7 @@ export function LineupSubmitForm({
                       const suffix = otherGames.length > 0 ? ` (also G${otherGames.join(', G')})` : ''
                       return (
                         <option key={p.playerId} value={p.playerId}>
-                          {p.name}{suffix}
+                          {p.name}{p.rating != null ? ` [${p.rating.toFixed(1)}]` : ''}{suffix}
                         </option>
                       )
                     })}
@@ -209,6 +308,19 @@ export function LineupSubmitForm({
           </div>
         )
       })()}
+
+      {/* Auto-optimize button */}
+      <button
+        type="button"
+        onClick={() => {
+          const optimized = optimizeLineup(roster, gamesPerMatch, gameTypes, playersPerSide)
+          setSlots(optimized as Record<SlotKey, string>)
+          toast.success('Lineup optimized by rating')
+        }}
+        className="w-full py-2.5 rounded-lg border border-success/40 text-success text-sm font-semibold hover:bg-success/10 transition-colors"
+      >
+        ★ Auto-optimize Lineup
+      </button>
 
       <Button type="submit" loading={isPending} className="w-full" size="lg">
         Submit Lineup

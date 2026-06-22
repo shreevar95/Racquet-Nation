@@ -50,8 +50,16 @@ function NumField({ label, value, min, max, onChange }: NumFieldProps) {
   )
 }
 
+const POINTS_PRESETS = [11, 15, 21]
+const GAMES_PRESETS = [
+  { label: 'Best of 3', value: 3 },
+  { label: 'Best of 4', value: 4 },
+  { label: 'Best of 5', value: 5 },
+]
+
 export function Step3Format({ data, update }: Props) {
   const { matchFormat, scoringConfig } = data
+  const hasKnockout = matchFormat.tournamentStructure === 'GROUP_STAGE_PLUS_KNOCKOUT' || matchFormat.tournamentStructure === 'KNOCKOUT_ONLY'
 
   return (
     <div className="space-y-6">
@@ -79,13 +87,26 @@ export function Step3Format({ data, update }: Props) {
             </select>
           </div>
 
-          <NumField
-            label="Games per Match"
-            value={matchFormat.gamesPerMatch}
-            min={1}
-            max={9}
-            onChange={(n) => update({ matchFormat: { ...matchFormat, gamesPerMatch: n } })}
-          />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-text-secondary">Group Stage — Games per Match</label>
+            <div className="flex gap-2">
+              {GAMES_PRESETS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => update({ matchFormat: { ...matchFormat, gamesPerMatch: p.value } })}
+                  className={[
+                    'flex-1 rounded-md border py-2 text-sm font-semibold transition-all',
+                    matchFormat.gamesPerMatch === p.value
+                      ? 'border-brand-500 bg-brand-500/15 text-brand-400'
+                      : 'border-border bg-surface-raised text-text-secondary hover:border-brand-500/50',
+                  ].join(' ')}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Per-game type selectors */}
@@ -137,38 +158,117 @@ export function Step3Format({ data, update }: Props) {
         </div>
       </div>
 
+      {/* Knockout format — shown when structure includes knockout */}
+      {hasKnockout && (
+        <div className="space-y-4 border border-border rounded-lg p-4 bg-surface">
+          <p className="text-sm font-semibold text-text-primary">Final Stage Format</p>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-text-secondary">Games per Match</label>
+            <div className="flex gap-2">
+              {GAMES_PRESETS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => update({ matchFormat: { ...matchFormat, knockoutGamesPerMatch: p.value } })}
+                  className={[
+                    'flex-1 rounded-md border py-2 text-sm font-semibold transition-all',
+                    (matchFormat.knockoutGamesPerMatch ?? matchFormat.gamesPerMatch) === p.value
+                      ? 'border-brand-500 bg-brand-500/15 text-brand-400'
+                      : 'border-border bg-surface-raised text-text-secondary hover:border-brand-500/50',
+                  ].join(' ')}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-text-secondary">Points to Win a Game</label>
+            <div className="flex gap-2">
+              {POINTS_PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => update({ matchFormat: { ...matchFormat, knockoutPointsToWin: p } })}
+                  className={[
+                    'flex-1 rounded-md border py-2.5 text-base font-black font-display transition-all',
+                    (matchFormat.knockoutPointsToWin ?? scoringConfig.pointsToWin) === p
+                      ? 'border-brand-500 bg-brand-500/15 text-brand-400'
+                      : 'border-border bg-surface-raised text-text-secondary hover:border-brand-500/50',
+                  ].join(' ')}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-text-muted">Leave unset to use the same points as group stage ({scoringConfig.pointsToWin})</p>
+            <NumField
+              label=""
+              value={matchFormat.knockoutPointsToWin ?? scoringConfig.pointsToWin}
+              min={1}
+              onChange={(n) => update({ matchFormat: { ...matchFormat, knockoutPointsToWin: n } })}
+            />
+          </div>
+        </div>
+      )}
+
       <div>
         <p className="text-sm font-semibold text-text-primary mb-3">Scoring Rules</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <NumField
-            label="Points to Win a Game"
-            value={scoringConfig.pointsToWin}
-            min={1}
-            onChange={(n) => update({ scoringConfig: { ...scoringConfig, pointsToWin: n } })}
-          />
-          <NumField
-            label="Win Margin Required"
-            value={scoringConfig.winMargin}
-            min={1}
-            onChange={(n) => update({ scoringConfig: { ...scoringConfig, winMargin: n } })}
-          />
+        <div className="space-y-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-text-secondary">Scoring Method</label>
-            <select
-              value={scoringConfig.scoringMethod}
-              onChange={(e) =>
-                update({
-                  scoringConfig: {
-                    ...scoringConfig,
-                    scoringMethod: e.target.value as 'RALLY' | 'SIDE_OUT',
-                  },
-                })
-              }
-              className="h-10 rounded-md border border-border bg-surface-raised px-3 text-sm text-text-primary focus:border-brand-500 focus:outline-none"
-            >
-              <option value="RALLY">Rally scoring</option>
-              <option value="SIDE_OUT">Side-out scoring</option>
-            </select>
+            <label className="text-sm font-medium text-text-secondary">Points to Win a Game</label>
+            <div className="flex gap-2">
+              {POINTS_PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => update({ scoringConfig: { ...scoringConfig, pointsToWin: p } })}
+                  className={[
+                    'flex-1 rounded-md border py-2.5 text-base font-black font-display transition-all',
+                    scoringConfig.pointsToWin === p
+                      ? 'border-brand-500 bg-brand-500/15 text-brand-400'
+                      : 'border-border bg-surface-raised text-text-secondary hover:border-brand-500/50',
+                  ].join(' ')}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-text-muted">Or type a custom value below</p>
+            <NumField
+              label=""
+              value={scoringConfig.pointsToWin}
+              min={1}
+              onChange={(n) => update({ scoringConfig: { ...scoringConfig, pointsToWin: n } })}
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <NumField
+              label="Win Margin Required"
+              value={scoringConfig.winMargin}
+              min={1}
+              onChange={(n) => update({ scoringConfig: { ...scoringConfig, winMargin: n } })}
+            />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-text-secondary">Scoring Method</label>
+              <select
+                value={scoringConfig.scoringMethod}
+                onChange={(e) =>
+                  update({
+                    scoringConfig: {
+                      ...scoringConfig,
+                      scoringMethod: e.target.value as 'RALLY' | 'SIDE_OUT',
+                    },
+                  })
+                }
+                className="h-10 rounded-md border border-border bg-surface-raised px-3 text-sm text-text-primary focus:border-brand-500 focus:outline-none"
+              >
+                <option value="RALLY">Rally scoring</option>
+                <option value="SIDE_OUT">Side-out scoring</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
