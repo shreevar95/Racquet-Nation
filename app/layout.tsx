@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono, Barlow_Condensed } from 'next/font/google'
+import { Geist, Geist_Mono, Barlow_Condensed, Nunito } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Toaster } from 'sonner'
 import './globals.css'
@@ -21,6 +21,13 @@ const barlowCondensed = Barlow_Condensed({
   subsets: ['latin'],
   weight: ['600', '700', '800', '900'],
   style: ['normal', 'italic'],
+  display: 'swap',
+})
+
+const nunito = Nunito({
+  variable: '--font-nunito',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
   display: 'swap',
 })
 
@@ -53,7 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ClerkProvider>
       <html
         lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} h-full`}
+        className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} ${nunito.variable} h-full`}
       >
         <body className="h-full min-h-screen text-text-primary antialiased">
           {children}

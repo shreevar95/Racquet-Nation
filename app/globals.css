@@ -63,6 +63,66 @@
   --shadow-modal: 0 20px 60px rgba(0,0,0,0.7);
   --shadow-glow-orange: 0 0 40px rgba(249,115,22,0.25);
   --shadow-glow-green:  0 0 40px rgba(22,163,74,0.20);
+
+  /* ─── Racquet Nation v2 design tokens (marketing site + player app) ─────
+     Namespaced "rn-" / distinct names so they don't collide with the
+     dark-theme tokens above, which the rest of the app (admin, manage,
+     scoring) still depends on. See design_handoff_racquet_nation/README.md. */
+
+  /* Brand — saffron (primary) */
+  --color-saffron:      #F26B21;
+  --color-saffron-300:  #FF9A5A;
+  --color-saffron-tint: #FFF1E7;
+
+  /* India green (secondary — success / opponent / "up") */
+  --color-rn-green:      #19A463;
+  --color-rn-green-300:  #34D77E;
+  --color-rn-green-soft: #7BE6A6;
+
+  /* Navy ink (text + dark surfaces) */
+  --color-ink:       #13243A;
+  --color-ink-deep:  #0E1B2A;
+  --color-navy-card: #13243A;
+
+  /* Support */
+  --color-rn-yellow: #F4C24B;
+  --color-rn-blue:   #3E9BD8;
+  --color-red-down:  #E0533B;
+
+  /* Neutrals / surfaces */
+  --color-paper:           #F4F1EA;
+  --color-sand:            #E9E1D4;
+  --color-rn-card:         #ffffff;
+  --color-rn-text-secondary: #54637a;
+  --color-rn-text-muted:     #8493a6;
+  --color-rn-border:         #E7E2D8;
+
+  /* Font */
+  --font-nunito: var(--font-nunito);
+
+  /* Type scale */
+  --text-rn-hero:    74px;
+  --text-rn-h2:      clamp(44px, 5vw, 58px);
+  --text-rn-h3:      21px;
+  --text-rn-eyebrow: 13px;
+  --text-rn-body:    17px;
+  --text-rn-metric:  clamp(42px, 5vw, 62px);
+
+  /* Radius */
+  --radius-rn-pill:        99px;
+  --radius-rn-chip:        14px;
+  --radius-rn-card:        22px;
+  --radius-rn-card-inner:  14px;
+  --radius-rn-tile:        12px;
+  --radius-rn-phone:       34px;
+  --radius-rn-phone-bezel: 42px;
+
+  /* Shadow */
+  --shadow-rn-card:        0 12px 34px rgba(16,28,44,.08);
+  --shadow-rn-card-hover:  0 22px 48px rgba(16,28,44,.18);
+  --shadow-rn-floating:    0 26px 60px rgba(16,28,44,.32);
+  --shadow-rn-brand-glow:  0 10px 26px rgba(242,107,33,.38);
+  --shadow-rn-phone:       0 36px 80px rgba(0,0,0,.5);
 }
 
 /* ─── Base ──────────────────────────────────────────────────────────────── */
@@ -103,6 +163,39 @@ body {
 /* ─── Display / Sports Headings ─────────────────────────────────────────── */
 .font-display {
   font-family: var(--font-display), 'Arial Narrow', Arial, sans-serif;
+}
+
+/* ─── Racquet Nation v2 — Nunito (marketing site + player app) ─────────── */
+.font-nunito {
+  font-family: var(--font-nunito), 'Nunito', system-ui, sans-serif;
+}
+
+/* ─── Racquet Nation v2 — motion ────────────────────────────────────────
+   Plays once on mount with `animation-fill-mode: both`, so the resting
+   state always ends fully visible even if the element never enters the
+   viewport (no IntersectionObserver dependency for above-the-fold UI). */
+@keyframes rn-reveal {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes rn-float-a { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-12px) rotate(-3deg); } }
+@keyframes rn-float-b { 0%, 100% { transform: translateY(0) rotate(4deg); } 50% { transform: translateY(-16px) rotate(4deg); } }
+@keyframes rn-float-c { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+.rn-reveal { animation: rn-reveal .7s cubic-bezier(.2,.7,.2,1) both; }
+.rn-float-a { animation: rn-float-a 6s ease-in-out infinite; }
+.rn-float-b { animation: rn-float-b 7s ease-in-out infinite; }
+.rn-float-c { animation: rn-float-c 5.5s ease-in-out infinite; }
+
+.rn-card-hover { transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s; }
+.rn-card-hover:hover { transform: translateY(-5px); box-shadow: var(--shadow-rn-card-hover); }
+
+.rn-cta-hover { transition: transform .15s, filter .15s; }
+.rn-cta-hover:hover { transform: translateY(-2px); filter: brightness(1.04); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rn-reveal, .rn-float-a, .rn-float-b, .rn-float-c { animation: none !important; }
+  .rn-card-hover:hover { transform: none; }
 }
 
 /* ─── Focus Visible ─────────────────────────────────────────────────────── */

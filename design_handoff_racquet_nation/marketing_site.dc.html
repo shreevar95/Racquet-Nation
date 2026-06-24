@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; }
+    @keyframes rnReveal { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:none; } }
+    @keyframes floatA { 0%,100% { transform:translateY(0) rotate(-3deg); } 50% { transform:translateY(-12px) rotate(-3deg); } }
+    @keyframes floatB { 0%,100% { transform:translateY(0) rotate(4deg); } 50% { transform:translateY(-16px) rotate(4deg); } }
+    @keyframes floatC { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+    .rev { animation:rnReveal .7s cubic-bezier(.2,.7,.2,1) both; }
+    .fA { animation:floatA 6s ease-in-out infinite; }
+    .fB { animation:floatB 7s ease-in-out infinite; }
+    .fC { animation:floatC 5.5s ease-in-out infinite; }
+    .card { transition:transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s; }
+    .card:hover { transform:translateY(-5px); box-shadow:0 22px 48px rgba(16,28,44,.18) !important; }
+    .lnk:hover { color:#F26B21 !important; }
+    .ctabtn { transition:transform .15s, filter .15s; }
+    .ctabtn:hover { transform:translateY(-2px); filter:brightness(1.04); }
+    @media (prefers-reduced-motion: reduce) { .rev,.fA,.fB,.fC { animation:none !important; } .card:hover { transform:none; } }
+  </style>
+</helmet>
+
+<div style="font-family:Nunito,system-ui,sans-serif;background:#F4F1EA;color:#13243A;overflow-x:hidden;min-height:100vh;">
+
+  <!-- ===================== NAV ===================== -->
+  <div style="position:sticky;top:0;z-index:60;background:rgba(244,241,234,.82);backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid rgba(16,28,44,.07);">
+    <div style="max-width:1160px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <span style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#F26B21,#FF9A5A);display:flex;align-items:center;justify-content:center;color:#fff;font-family:Nunito,sans-serif;font-weight:900;font-size:14px;">RN</span>
+        <span style="font-family:Nunito,sans-serif;font-weight:800;font-size:18px;letter-spacing:-.01em;">Racquet Nation</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:28px;">
+        <span class="lnk" style="font-size:14px;font-weight:700;color:#54637a;cursor:pointer;">Leagues</span>
+        <span class="lnk" style="font-size:14px;font-weight:700;color:#54637a;cursor:pointer;">Fixtures</span>
+        <span class="lnk" style="font-size:14px;font-weight:700;color:#54637a;cursor:pointer;">How to play</span>
+        <span class="lnk" style="font-size:14px;font-weight:700;color:#54637a;cursor:pointer;">Sign in</span>
+        <span class="ctabtn" style="font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#F26B21,#FF9A5A);padding:10px 20px;border-radius:12px;cursor:pointer;box-shadow:0 6px 16px rgba(242,107,33,.32);">Join free</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== HERO (dark, vibrant cards) ===================== -->
+  <div style="background:radial-gradient(120% 120% at 80% 0%, #1B3A57 0%, #0E1B2A 60%);color:#fff;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-120px;left:-80px;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(242,107,33,.32),transparent 70%);"></div>
+    <div style="position:absolute;bottom:-160px;right:-60px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(25,164,99,.28),transparent 70%);"></div>
+    <div style="max-width:1160px;margin:0 auto;padding:70px 28px 90px;display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:center;position:relative;">
+      <!-- copy -->
+      <div>
+        <div class="rev" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);padding:7px 14px;border-radius:99px;margin-bottom:22px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#34D77E;box-shadow:0 0 0 4px rgba(52,215,126,.25);"></span>
+          <span style="font-size:12px;font-weight:800;letter-spacing:.08em;">GAMEWEEK 7 IS LIVE</span>
+        </div>
+        <h1 class="rev" style="font-family:Nunito,sans-serif;font-weight:900;font-size:74px;line-height:.94;letter-spacing:-.03em;margin:0;text-transform:uppercase;">
+          Pick your<br>squad.<br><span style="background:linear-gradient(90deg,#FF9A5A,#F26B21);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Rule the league.</span>
+        </h1>
+        <p class="rev" style="font-size:19px;line-height:1.55;color:#aebfd0;margin:24px 0 0;max-width:420px;">Draft your team, submit sealed lineups, and climb the table every gameweek — across six racquet sports.</p>
+        <div class="rev" style="display:flex;gap:13px;margin-top:30px;">
+          <span class="ctabtn" style="font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,#F26B21,#FF9A5A);padding:15px 28px;border-radius:14px;cursor:pointer;box-shadow:0 10px 26px rgba(242,107,33,.38);">Create your team →</span>
+          <span class="ctabtn" style="font-size:16px;font-weight:800;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:15px 28px;border-radius:14px;cursor:pointer;">How to play</span>
+        </div>
+        <div class="rev" style="display:flex;align-items:center;gap:11px;margin-top:28px;">
+          <div style="display:flex;">
+            <span style="width:30px;height:30px;border-radius:50%;background:#F26B21;border:2px solid #0E1B2A;"></span>
+            <span style="width:30px;height:30px;border-radius:50%;background:#19A463;border:2px solid #0E1B2A;margin-left:-10px;"></span>
+            <span style="width:30px;height:30px;border-radius:50%;background:#3E9BD8;border:2px solid #0E1B2A;margin-left:-10px;"></span>
+            <span style="width:30px;height:30px;border-radius:50%;background:#F4C24B;border:2px solid #0E1B2A;margin-left:-10px;"></span>
+          </div>
+          <span style="font-size:14px;color:#9fb1c4;font-weight:700;">4,800+ managers competing this week</span>
+        </div>
+      </div>
+
+      <!-- floating card cluster -->
+      <div style="position:relative;height:440px;">
+        <!-- gameweek points card (gradient) -->
+        <div class="fC" style="position:absolute;top:36px;left:30px;width:230px;background:linear-gradient(150deg,#F26B21,#FF9A5A);border-radius:22px;padding:20px;box-shadow:0 26px 60px rgba(242,107,33,.4);z-index:3;color:#fff;">
+          <div style="font-size:11px;font-weight:800;letter-spacing:.12em;opacity:.9;">GAMEWEEK POINTS</div>
+          <div style="font-family:Nunito,sans-serif;font-weight:900;font-size:62px;line-height:1;margin:6px 0 2px;">82</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;"><span style="background:rgba(255,255,255,.25);border-radius:7px;padding:2px 7px;">▲ 12</span><span style="opacity:.92;">vs avg</span></div>
+        </div>
+        <!-- mini-league card (white) -->
+        <div class="fA" style="position:absolute;top:0;right:0;width:248px;background:#fff;border-radius:20px;padding:16px;box-shadow:0 26px 60px rgba(16,28,44,.32);z-index:2;color:#13243A;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-size:11px;font-weight:800;letter-spacing:.1em;color:#8493a6;">OFFICE LEAGUE</span><span style="font-size:11px;font-weight:800;color:#19A463;">▲ 2</span></div>
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 0;"><span style="width:18px;font-weight:800;color:#8493a6;font-size:13px;">1</span><span style="width:24px;height:24px;border-radius:7px;background:#19A463;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:9px;">NN</span><span style="flex:1;font-size:13px;font-weight:700;">Net Ninjas</span><span style="font-weight:800;font-size:13px;">641</span></div>
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 0;"><span style="width:18px;font-weight:800;color:#8493a6;font-size:13px;">2</span><span style="width:24px;height:24px;border-radius:7px;background:#F4C24B;color:#13243A;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:9px;">AC</span><span style="flex:1;font-size:13px;font-weight:700;">Aces</span><span style="font-weight:800;font-size:13px;">628</span></div>
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;background:#FFF1E7;border-radius:9px;margin:2px -4px 0;"><span style="width:18px;font-weight:800;color:#F26B21;font-size:13px;">3</span><span style="width:24px;height:24px;border-radius:7px;background:#F26B21;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:9px;">SM</span><span style="flex:1;font-size:13px;font-weight:800;">Smashers</span><span style="font-weight:800;font-size:13px;">615</span></div>
+        </div>
+        <!-- next fixture card -->
+        <div class="fB" style="position:absolute;bottom:8px;right:54px;width:236px;background:#13243A;border:1px solid #25405c;border-radius:20px;padding:16px;box-shadow:0 26px 60px rgba(0,0,0,.45);z-index:4;color:#fff;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-size:10px;font-weight:800;letter-spacing:.12em;color:#F4C24B;">NEXT FIXTURE</span><span style="font-size:10px;font-weight:800;color:#9fb1c4;">SAT 4PM</span></div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;text-align:center;"><div style="width:38px;height:38px;border-radius:11px;background:#F26B21;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;">SM</div><div style="font-size:12px;font-weight:800;">Smashers</div></div>
+            <span style="font-family:Nunito,sans-serif;font-size:13px;font-weight:800;color:#6f8295;">VS</span>
+            <div style="flex:1;text-align:center;"><div style="width:38px;height:38px;border-radius:11px;background:#19A463;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;">NN</div><div style="font-size:12px;font-weight:800;">Net Ninjas</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== STATS BAND (gradient) ===================== -->
+  <div style="background:linear-gradient(120deg,#F26B21,#FF9A5A);">
+    <div style="max-width:1160px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:repeat(4,1fr);">
+      <div style="padding:30px 14px;text-align:center;border-right:1px solid rgba(255,255,255,.22);"><div style="font-family:Nunito,sans-serif;font-size:42px;font-weight:900;color:#fff;line-height:1;">4.8k</div><div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#fff;opacity:.85;margin-top:6px;">MANAGERS</div></div>
+      <div style="padding:30px 14px;text-align:center;border-right:1px solid rgba(255,255,255,.22);"><div style="font-family:Nunito,sans-serif;font-size:42px;font-weight:900;color:#fff;line-height:1;">1.2k</div><div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#fff;opacity:.85;margin-top:6px;">MINI-LEAGUES</div></div>
+      <div style="padding:30px 14px;text-align:center;border-right:1px solid rgba(255,255,255,.22);"><div style="font-family:Nunito,sans-serif;font-size:42px;font-weight:900;color:#fff;line-height:1;">120+</div><div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#fff;opacity:.85;margin-top:6px;">TOURNAMENTS</div></div>
+      <div style="padding:30px 14px;text-align:center;"><div style="font-family:Nunito,sans-serif;font-size:42px;font-weight:900;color:#fff;line-height:1;">6</div><div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#fff;opacity:.85;margin-top:6px;">SPORTS</div></div>
+    </div>
+  </div>
+
+  <!-- ===================== HOW TO PLAY (cards) ===================== -->
+  <div style="max-width:1160px;margin:0 auto;padding:88px 28px 50px;">
+    <div style="text-align:center;margin-bottom:48px;">
+      <div class="rev" style="font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#F26B21;margin-bottom:14px;">How to play</div>
+      <h2 class="rev" style="font-family:Nunito,sans-serif;font-weight:900;font-size:50px;letter-spacing:-.03em;margin:0;text-transform:uppercase;">Three steps to <span style="background:linear-gradient(90deg,#F26B21,#FF9A5A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">game day</span></h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+      <div class="card rev" style="background:#fff;border-radius:22px;padding:28px;box-shadow:0 12px 34px rgba(16,28,44,.08);">
+        <div style="width:54px;height:54px;border-radius:15px;background:linear-gradient(140deg,#F26B21,#FF9A5A);display:flex;align-items:center;justify-content:center;font-family:Nunito,sans-serif;color:#fff;font-weight:900;font-size:22px;margin-bottom:18px;box-shadow:0 8px 18px rgba(242,107,33,.3);">1</div>
+        <h3 style="font-family:Nunito,sans-serif;font-weight:800;font-size:21px;margin:0 0 9px;">Draft your squad</h3>
+        <p style="font-size:15px;line-height:1.6;color:#54637a;margin:0;">Build your team from the player pool and name your captain for double points.</p>
+      </div>
+      <div class="card rev" style="background:#fff;border-radius:22px;padding:28px;box-shadow:0 12px 34px rgba(16,28,44,.08);">
+        <div style="width:54px;height:54px;border-radius:15px;background:linear-gradient(140deg,#0E7C4B,#19A463);display:flex;align-items:center;justify-content:center;font-family:Nunito,sans-serif;color:#fff;font-weight:900;font-size:22px;margin-bottom:18px;box-shadow:0 8px 18px rgba(25,164,99,.3);">2</div>
+        <h3 style="font-family:Nunito,sans-serif;font-weight:800;font-size:21px;margin:0 0 9px;">Submit sealed lineup</h3>
+        <p style="font-size:15px;line-height:1.6;color:#54637a;margin:0;">Lock your lineup before each round. Both captains reveal at once — no peeking.</p>
+      </div>
+      <div class="card rev" style="background:#fff;border-radius:22px;padding:28px;box-shadow:0 12px 34px rgba(16,28,44,.08);">
+        <div style="width:54px;height:54px;border-radius:15px;background:linear-gradient(140deg,#2A6FB0,#3E9BD8);display:flex;align-items:center;justify-content:center;font-family:Nunito,sans-serif;color:#fff;font-weight:900;font-size:22px;margin-bottom:18px;box-shadow:0 8px 18px rgba(62,155,216,.3);">3</div>
+        <h3 style="font-family:Nunito,sans-serif;font-weight:800;font-size:21px;margin:0 0 9px;">Score &amp; climb</h3>
+        <p style="font-size:15px;line-height:1.6;color:#54637a;margin:0;">Points post live as matches finish. Watch your rank rise across every league.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MINI-LEAGUE LEADERBOARD ===================== -->
+  <div style="max-width:1160px;margin:0 auto;padding:50px 28px;display:grid;grid-template-columns:.85fr 1.15fr;gap:44px;align-items:center;">
+    <div>
+      <div class="rev" style="font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#19A463;margin-bottom:14px;">Mini-leagues</div>
+      <h2 class="rev" style="font-family:Nunito,sans-serif;font-weight:900;font-size:46px;line-height:1.02;letter-spacing:-.03em;margin:0 0 16px;text-transform:uppercase;">Bragging rights, <span style="background:linear-gradient(90deg,#19A463,#34D77E);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">settled.</span></h2>
+      <p class="rev" style="font-size:17px;line-height:1.6;color:#54637a;margin:0 0 22px;max-width:380px;">Start a league with your club, office or group chat. Live tables, rank movement and weekly winners.</p>
+      <span class="ctabtn rev" style="display:inline-block;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,#19A463,#34D77E);padding:13px 24px;border-radius:13px;cursor:pointer;box-shadow:0 10px 24px rgba(25,164,99,.32);">Start a league →</span>
+    </div>
+    <div class="card rev" style="background:#fff;border-radius:24px;padding:10px;box-shadow:0 18px 44px rgba(16,28,44,.12);">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px;">
+        <span style="font-family:Nunito,sans-serif;font-weight:800;font-size:17px;">Office League · GW7</span>
+        <span style="font-size:12px;font-weight:800;color:#8493a6;">24 teams</span>
+      </div>
+      <sc-for list="{{ leaderboard }}" as="r" hint-placeholder-count="5">
+        <div style="{{ r.rowStyle }}">
+          <span style="width:26px;font-family:Nunito,sans-serif;font-weight:800;font-size:15px;color:#13243A;">{{ r.rank }}</span>
+          <span style="font-size:12px;font-weight:800;width:34px;color:{{ r.moveColor }};">{{ r.move }}</span>
+          <span style="width:32px;height:32px;border-radius:9px;background:{{ r.color }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;">{{ r.initials }}</span>
+          <span style="flex:1;font-size:15px;font-weight:700;">{{ r.name }}</span>
+          <span style="font-size:12px;color:#8493a6;font-weight:700;margin-right:14px;">GW {{ r.gw }}</span>
+          <span style="font-family:Nunito,sans-serif;font-weight:800;font-size:16px;">{{ r.total }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ===================== PLAYER CARDS ===================== -->
+  <div style="max-width:1160px;margin:0 auto;padding:60px 28px;">
+    <div style="text-align:center;margin-bottom:42px;">
+      <div class="rev" style="font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#F26B21;margin-bottom:14px;">Your players</div>
+      <h2 class="rev" style="font-family:Nunito,sans-serif;font-weight:900;font-size:46px;letter-spacing:-.03em;margin:0;text-transform:uppercase;">Every point counts</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;">
+      <sc-for list="{{ players }}" as="p" hint-placeholder-count="4">
+        <div class="card rev" style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 12px 30px rgba(16,28,44,.09);">
+          <div style="background:{{ p.grad }};padding:18px 16px 30px;position:relative;">
+            <div style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.22);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:800;color:#fff;">{{ p.pos }}</div>
+            <div style="width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,.9);margin:4px auto 0;"></div>
+          </div>
+          <div style="text-align:center;padding:0 14px 18px;margin-top:-14px;">
+            <div style="background:#fff;border-radius:13px;box-shadow:0 6px 16px rgba(16,28,44,.1);padding:12px 10px;">
+              <div style="font-weight:800;font-size:15px;">{{ p.name }}</div>
+              <div style="font-size:12px;color:#8493a6;font-weight:700;margin-top:1px;">{{ p.team }}</div>
+              <div style="display:flex;justify-content:center;align-items:baseline;gap:5px;margin-top:9px;"><span style="font-family:Nunito,sans-serif;font-weight:900;font-size:28px;color:{{ p.pts_color }};">{{ p.pts }}</span><span style="font-size:11px;font-weight:800;color:#8493a6;">PTS</span></div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ===================== LIVE SCORING (dark pitch + phone) ===================== -->
+  <div style="background:radial-gradient(120% 120% at 20% 0%, #0E7C4B 0%, #0A2A1C 70%);color:#fff;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:50%;left:50%;width:520px;height:520px;border:2px solid rgba(255,255,255,.06);border-radius:50%;transform:translate(-50%,-50%);"></div>
+    <div style="max-width:1160px;margin:0 auto;padding:80px 28px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;position:relative;">
+      <div>
+        <div class="rev" style="font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#7BE6A6;margin-bottom:16px;">Live scoring</div>
+        <h2 class="rev" style="font-family:Nunito,sans-serif;font-weight:900;font-size:50px;line-height:1.0;letter-spacing:-.03em;margin:0 0 18px;text-transform:uppercase;">Feel every<br><span style="background:linear-gradient(90deg,#7BE6A6,#34D77E);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">point land.</span></h2>
+        <p class="rev" style="font-size:17px;line-height:1.6;color:#bfe3cd;margin:0 0 24px;max-width:400px;">Scores stream in as matches play out. Your gameweek total ticks up in real time — pure edge-of-seat.</p>
+        <div class="rev" style="display:flex;flex-direction:column;gap:13px;">
+          <div style="display:flex;align-items:center;gap:11px;"><span style="width:24px;height:24px;border-radius:8px;background:rgba(123,230,166,.18);display:flex;align-items:center;justify-content:center;color:#7BE6A6;font-weight:900;font-size:13px;">✓</span><span style="font-size:16px;color:#eaf6ee;">Push alerts the moment a result drops</span></div>
+          <div style="display:flex;align-items:center;gap:11px;"><span style="width:24px;height:24px;border-radius:8px;background:rgba(123,230,166,.18);display:flex;align-items:center;justify-content:center;color:#7BE6A6;font-weight:900;font-size:13px;">✓</span><span style="font-size:16px;color:#eaf6ee;">Captain &amp; bonus points calculated instantly</span></div>
+          <div style="display:flex;align-items:center;gap:11px;"><span style="width:24px;height:24px;border-radius:8px;background:rgba(123,230,166,.18);display:flex;align-items:center;justify-content:center;color:#7BE6A6;font-weight:900;font-size:13px;">✓</span><span style="font-size:16px;color:#eaf6ee;">Live rank movement across all your leagues</span></div>
+        </div>
+      </div>
+      <!-- phone -->
+      <div class="fC" style="display:flex;justify-content:center;">
+        <div style="background:#0E1B2A;border-radius:42px;padding:9px;width:282px;box-shadow:0 36px 80px rgba(0,0,0,.5);">
+          <div style="background:#F4F1EA;border-radius:34px;overflow:hidden;">
+            <div style="background:linear-gradient(150deg,#F26B21,#FF9A5A);padding:18px 18px 14px;color:#fff;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:.1em;opacity:.9;">GAMEWEEK 7 · LIVE</div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;"><span style="font-family:Nunito,sans-serif;font-weight:900;font-size:44px;line-height:1;">82</span><span style="font-size:13px;font-weight:800;background:rgba(255,255,255,.25);border-radius:7px;padding:2px 8px;">▲ 12 pts</span></div>
+            </div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:9px;">
+              <div style="background:#fff;border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 12px rgba(16,28,44,.06);"><span style="width:30px;height:30px;border-radius:9px;background:#F26B21;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;">AM</span><div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#13243A;">A. Mehta (C)</div><div style="font-size:11px;color:#8493a6;">Singles 1 · won 2–0</div></div><span style="font-family:Nunito,sans-serif;font-weight:900;font-size:18px;color:#19A463;">+24</span></div>
+              <div style="background:#fff;border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 12px rgba(16,28,44,.06);"><span style="width:30px;height:30px;border-radius:9px;background:#3E9BD8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;">PS</span><div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#13243A;">P. Sharma</div><div style="font-size:11px;color:#8493a6;">Doubles A · live</div></div><span style="font-family:Nunito,sans-serif;font-weight:900;font-size:18px;color:#F26B21;">+11</span></div>
+              <div style="background:#fff;border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 12px rgba(16,28,44,.06);"><span style="width:30px;height:30px;border-radius:9px;background:#F4C24B;color:#13243A;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;">RK</span><div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#13243A;">R. Kapoor</div><div style="font-size:11px;color:#8493a6;">Singles 2 · 1–1</div></div><span style="font-family:Nunito,sans-serif;font-weight:900;font-size:18px;color:#8493a6;">+8</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SPORTS ===================== -->
+  <div style="max-width:1160px;margin:0 auto;padding:80px 28px;text-align:center;">
+    <div class="rev" style="font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#F26B21;margin-bottom:14px;">One app</div>
+    <h2 class="rev" style="font-family:Nunito,sans-serif;font-weight:900;font-size:44px;letter-spacing:-.03em;margin:0 0 30px;text-transform:uppercase;">Six sports to manage</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">
+      <span class="card" style="background:#fff;border-radius:14px;padding:13px 26px;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(16,28,44,.07);cursor:default;">🏓 Pickleball</span>
+      <span class="card" style="background:#fff;border-radius:14px;padding:13px 26px;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(16,28,44,.07);cursor:default;">🎾 Tennis</span>
+      <span class="card" style="background:#fff;border-radius:14px;padding:13px 26px;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(16,28,44,.07);cursor:default;">🏸 Badminton</span>
+      <span class="card" style="background:#fff;border-radius:14px;padding:13px 26px;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(16,28,44,.07);cursor:default;">Squash</span>
+      <span class="card" style="background:#fff;border-radius:14px;padding:13px 26px;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(16,28,44,.07);cursor:default;">Table Tennis</span>
+      <span class="card" style="background:#fff;border-radius:14px;padding:13px 26px;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(16,28,44,.07);cursor:default;">Padel</span>
+    </div>
+  </div>
+
+  <!-- ===================== FINAL CTA (gradient) ===================== -->
+  <div style="max-width:1160px;margin:0 auto;padding:0 28px 70px;">
+    <div style="background:radial-gradient(120% 140% at 100% 0%,#FF9A5A 0%,#F26B21 45%,#D2541A 100%);border-radius:30px;padding:64px 40px;text-align:center;position:relative;overflow:hidden;box-shadow:0 28px 60px rgba(242,107,33,.34);">
+      <div style="position:absolute;top:-60px;left:40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.12);"></div>
+      <div style="position:absolute;bottom:-80px;right:80px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08);"></div>
+      <h2 class="rev" style="font-family:Nunito,sans-serif;font-weight:900;font-size:58px;line-height:.98;letter-spacing:-.03em;margin:0 0 14px;text-transform:uppercase;color:#fff;position:relative;">Gameweek 7 is live.<br>Don't miss out.</h2>
+      <p class="rev" style="font-size:19px;color:rgba(255,255,255,.92);margin:0 0 28px;position:relative;">Create your team free and join a league in under a minute.</p>
+      <span class="ctabtn rev" style="display:inline-block;font-size:17px;font-weight:800;color:#F26B21;background:#fff;padding:16px 34px;border-radius:14px;cursor:pointer;position:relative;box-shadow:0 12px 30px rgba(0,0,0,.18);">Create your team →</span>
+    </div>
+  </div>
+
+  <!-- ===================== FOOTER ===================== -->
+  <div style="background:#0E1B2A;color:#fff;">
+    <div style="max-width:1160px;margin:0 auto;padding:52px 28px 36px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:11px;margin-bottom:13px;">
+          <span style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#F26B21,#FF9A5A);display:flex;align-items:center;justify-content:center;color:#fff;font-family:Nunito,sans-serif;font-weight:900;font-size:13px;">RN</span>
+          <span style="font-family:Nunito,sans-serif;font-weight:800;font-size:17px;">Racquet Nation</span>
+        </div>
+        <p style="font-size:13px;line-height:1.6;color:#8fa1b4;margin:0;max-width:250px;">Fantasy racquet sports — pick your squad, run your league, win the season.</p>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#6a7e92;margin-bottom:13px;">PLAY</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:#b9c6d2;font-weight:600;">
+          <span class="lnk" style="cursor:pointer;">Leagues</span><span class="lnk" style="cursor:pointer;">Fixtures</span><span class="lnk" style="cursor:pointer;">Live scoring</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#6a7e92;margin-bottom:13px;">SPORTS</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:#b9c6d2;font-weight:600;">
+          <span class="lnk" style="cursor:pointer;">Pickleball</span><span class="lnk" style="cursor:pointer;">Tennis</span><span class="lnk" style="cursor:pointer;">Padel</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#6a7e92;margin-bottom:13px;">COMPANY</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:#b9c6d2;font-weight:600;">
+          <span class="lnk" style="cursor:pointer;">About</span><span class="lnk" style="cursor:pointer;">Privacy</span><span class="lnk" style="cursor:pointer;">Terms</span>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #1e3148;max-width:1160px;margin:0 auto;padding:18px 28px;font-size:12px;color:#6a7e92;display:flex;justify-content:space-between;">
+      <span>© 2026 Racquet Nation</span><span>Made for managers, by players.</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:2600}}">
+class Component extends DCLogic {
+  renderVals(){
+    const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2);
+    const lb = [
+      { rank:'1', move:'▲ 2', up:true,  name:'Net Ninjas',  gw:'92', total:'641', color:'#19A463' },
+      { rank:'2', move:'▼ 1', up:false, name:'Aces',        gw:'78', total:'628', color:'#F4C24B' },
+      { rank:'3', move:'▲ 4', up:true,  name:'Smashers',    gw:'82', total:'615', color:'#F26B21', me:true },
+      { rank:'4', move:'—',   up:null,  name:'Rally Kings', gw:'71', total:'602', color:'#3E9BD8' },
+      { rank:'5', move:'▼ 2', up:false, name:'Baseliners',  gw:'69', total:'588', color:'#8493a6' },
+    ];
+    const leaderboard = lb.map((r,i)=>({
+      ...r, initials:initials(r.name),
+      moveColor: r.up===true ? '#19A463' : r.up===false ? '#E0533B' : '#8493a6',
+      rowStyle: 'display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:12px;'
+        + (r.me ? 'background:#FFF1E7;' : (i%2? '' : 'background:#F7F5F0;')),
+    }));
+
+    const players = [
+      { name:'A. Mehta', team:'Smashers', pos:'S1', pts:'24', grad:'linear-gradient(150deg,#F26B21,#FF9A5A)', pts_color:'#19A463' },
+      { name:'P. Sharma', team:'Smashers', pos:'D-A', pts:'18', grad:'linear-gradient(150deg,#2A6FB0,#3E9BD8)', pts_color:'#13243A' },
+      { name:'R. Kapoor', team:'Smashers', pos:'S2', pts:'15', grad:'linear-gradient(150deg,#0E7C4B,#19A463)', pts_color:'#13243A' },
+      { name:'I. Tandon', team:'Smashers', pos:'D-B', pts:'12', grad:'linear-gradient(150deg,#C6952A,#F4C24B)', pts_color:'#13243A' },
+    ];
+
+    return { leaderboard, players };
+  }
+}
+</script>
+</body>
+</html>
