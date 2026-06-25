@@ -1,11 +1,26 @@
-const stats = [
-  { value: '4.8k', label: 'MANAGERS' },
-  { value: '1.2k', label: 'MINI-LEAGUES' },
-  { value: '120+', label: 'TOURNAMENTS' },
-  { value: '6', label: 'SPORTS' },
-]
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`
+  return String(n)
+}
 
-export function MarketingStatsBand() {
+export function MarketingStatsBand({
+  managerCount,
+  teamCount,
+  tournamentCount,
+  sportCount,
+}: {
+  managerCount: number
+  teamCount: number
+  tournamentCount: number
+  sportCount: number
+}) {
+  const stats = [
+    { value: formatCount(managerCount), label: 'MANAGERS' },
+    { value: formatCount(teamCount), label: 'TEAMS' },
+    { value: formatCount(tournamentCount), label: 'TOURNAMENTS' },
+    { value: String(sportCount), label: 'SPORTS' },
+  ]
+
   return (
     <div className="bg-gradient-to-br from-saffron to-saffron-300">
       <div className="mx-auto grid max-w-[1160px] grid-cols-4 px-7">

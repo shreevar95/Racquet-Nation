@@ -3,6 +3,12 @@ import Link from 'next/link'
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PushNotificationButton } from '@/components/PushNotificationButton'
+import { RnPageHeader } from '@/components/rn/RnPageHeader'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
+import { rnButtonVariants } from '@/components/rn/RnButton'
+import { DashboardTabs, type DashboardMatch, type DashboardTeam } from '@/components/dashboard/DashboardTabs'
+import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -14,6 +20,8 @@ const STATUS_LABEL: Record<string, string> = {
   COMPLETED: 'Completed',
   ARCHIVED: 'Archived',
 }
+
+const ROW_ACCENTS = ['#F4C24B', '#19A463', '#F26B21', '#3E9BD8']
 
 export default async function DashboardPage() {
   const user = await requireAuth()
@@ -69,171 +77,148 @@ export default async function DashboardPage() {
       })
     : []
 
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-10 space-y-8">
+  const firstName = user.name.split(' ')[0]
 
-      {/* Page header */}
-      <div className="border-b border-border pb-6">
-        <p className="text-brand-500 text-xs font-bold tracking-[0.2em] uppercase font-display mb-1">
-          Welcome back
-        </p>
-        <h1 className="font-display font-black text-4xl sm:text-5xl uppercase text-text-primary leading-tight">
-          {user.name.split(' ')[0]}
-        </h1>
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-text-secondary text-sm">
-            Your upcoming matches and tournament activity.
-          </p>
+  const matchNeedsLineup = (status: string) => status === 'OPEN_FOR_SUBMISSION' || status === 'TIEBREAK_REQUIRED'
+
+  const nextMatchIndex = upcomingMatches.findIndex((m) => matchNeedsLineup(m.status))
+  const nextMatch = nextMatchIndex >= 0 ? upcomingMatches[nextMatchIndex] : upcomingMatches[0]
+  const restMatches = upcomingMatches.filter((m) => m.id !== nextMatch?.id)
+
+  const dashboardMatches: DashboardMatch[] = restMatches.map((m, i) => {
+    const needsLineup = matchNeedsLineup(m.status)
+    return {
+      id: m.id,
+      slug: m.slug,
+      homeTeamName: m.homeTeam.name,
+      awayTeamName: m.awayTeam.name,
+      tournamentName: m.tournament.name,
+      statusLabel: needsLineup ? 'Submit lineup →' : m.status === 'IN_PROGRESS' ? 'Live' : m.status.replace(/_/g, ' '),
+      needsLineup,
+      accent: ROW_ACCENTS[i % ROW_ACCENTS.length],
+    }
+  })
+
+  const dashboardTeams: DashboardTeam[] = captainedTeams.map(({ team }) => ({
+    id: team.id,
+    name: team.name,
+    primaryColor: team.primaryColor,
+    logoUrl: team.logoUrl,
+    sub: team.tournament.name,
+    manageHref: `/manage/${team.tournament.slug}/teams`,
+  }))
+
+  return (
+    <div className="bg-paper font-nunito text-ink">
+      <RnPageHeader
+        eyebrow="WELCOME BACK"
+        title={firstName}
+        right={<RnTeamTile name={user.name} color="#19A463" logoUrl={user.avatarUrl} size="lg" className="rounded-full" />}
+      />
+
+      <div className="mx-auto max-w-2xl px-4 pb-10">
+        {nextMatch && (
+          <RnCard className="-mt-7 p-4 shadow-[0_12px_28px_rgba(43,52,58,.12)]">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[10px] font-extrabold tracking-[.16em] text-saffron">YOUR NEXT MATCH</span>
+              <span className="text-[10px] font-extrabold text-rn-green">
+                {nextMatch.scheduledAt
+                  ? new Date(nextMatch.scheduledAt).toLocaleString('en-IN', {
+                      weekday: 'short',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })
+                  : 'TBD'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 text-center">
+                <RnTeamTile name={nextMatch.homeTeam.name} color="#F26B21" size="lg" className="mx-auto mb-1.5" />
+                <div className="text-[13px] font-extrabold text-ink">{nextMatch.homeTeam.name}</div>
+              </div>
+              <div className="text-[11px] font-extrabold tracking-[.14em] text-rn-text-muted">VS</div>
+              <div className="flex-1 text-center">
+                <RnTeamTile name={nextMatch.awayTeam.name} color="#19A463" size="lg" className="mx-auto mb-1.5" />
+                <div className="text-[13px] font-extrabold text-ink">{nextMatch.awayTeam.name}</div>
+              </div>
+            </div>
+            <div className="mt-2.5 text-center text-[11px] text-rn-text-muted">{nextMatch.tournament.name}</div>
+            <Link
+              href={`/matches/${nextMatch.slug}`}
+              className={cn(rnButtonVariants({ variant: 'primary' }), 'mt-3.5 w-full')}
+            >
+              {matchNeedsLineup(nextMatch.status) ? 'Submit your lineup →' : 'View match →'}
+            </Link>
+          </RnCard>
+        )}
+
+        <div className="flex justify-end pt-4">
           <PushNotificationButton />
         </div>
-      </div>
 
-      {/* My Teams (captain) */}
-      {captainedTeams.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="h-0.5 w-4 bg-brand-500" />
-            <p className="text-brand-500 text-sm font-black tracking-[0.15em] uppercase font-display">
-              My Teams
-            </p>
-          </div>
-          <div className="rounded-lg border border-border bg-surface-raised overflow-hidden">
-            <div className="divide-y divide-border">
-              {captainedTeams.map(({ team }) => (
-                <Link
-                  key={team.id}
-                  href={`/manage/${team.tournament.slug}/teams`}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-surface-overlay transition-colors group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span
-                      className="h-7 w-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold text-white"
-                      style={{ background: team.primaryColor ?? '#1c2e44' }}
-                    >
-                      {team.name.slice(0, 2).toUpperCase()}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-text-primary group-hover:text-brand-400 transition-colors truncate">
-                        {team.name}
-                      </p>
-                      <p className="text-xs text-text-muted truncate">{team.tournament.name}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-brand-400 font-semibold shrink-0 ml-3">Edit →</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Admin section */}
-      {isAdmin && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="h-0.5 w-4 bg-brand-500" />
-            <p className="text-brand-500 text-sm font-black tracking-[0.15em] uppercase font-display">
-              My Tournaments
-            </p>
-          </div>
-
-          <Link
-            href="/admin/tournaments/new"
-            className="flex items-center justify-center gap-2 w-full rounded-lg bg-brand-500 hover:bg-brand-600 text-text-primary py-4 font-display font-bold text-base uppercase tracking-wide transition-colors"
-          >
-            <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-            </svg>
-            Create Tournament
-          </Link>
-
-          {managedTournaments.length > 0 && (
-            <div className="rounded-lg border border-border bg-surface-raised overflow-hidden">
-              <div className="px-4 py-3 border-b border-border bg-surface-overlay">
-                <p className="text-xs font-display font-bold uppercase tracking-wider text-text-muted">
-                  Your Tournaments
-                </p>
-              </div>
-              <div className="divide-y divide-border">
-                {managedTournaments.map((t) => (
-                  <Link
-                    key={t.slug}
-                    href={`/manage/${t.slug}`}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-surface-overlay transition-colors group"
-                  >
-                    <span className="text-sm font-semibold text-text-primary group-hover:text-brand-400 transition-colors truncate">
-                      {t.name}
-                    </span>
-                    <span className={[
-                      'text-xs font-bold uppercase shrink-0 ml-3',
-                      t.status === 'ACTIVE' ? 'text-brand-500' :
-                      t.status === 'REGISTRATION_OPEN' ? 'text-success' :
-                      t.status === 'COMPLETED' ? 'text-success' :
-                      'text-text-muted',
-                    ].join(' ')}>
-                      {STATUS_LABEL[t.status] ?? t.status}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Upcoming matches */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <span className="h-0.5 w-4 bg-brand-500" />
-          <p className="text-brand-500 text-sm font-black tracking-[0.15em] uppercase font-display">
-            My Matches
-          </p>
+        <div className="mt-1">
+          <DashboardTabs matches={dashboardMatches} teams={dashboardTeams} />
         </div>
 
-        {upcomingMatches.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-10 text-center">
-            <p className="font-display font-bold text-lg uppercase text-text-muted">No upcoming matches</p>
-            <p className="text-text-muted text-sm mt-2">Register for a tournament to get started.</p>
-            <Link
-              href="/tournaments"
-              className="inline-block mt-4 text-brand-500 text-sm font-semibold hover:text-brand-400 transition-colors"
-            >
+        {!nextMatch && upcomingMatches.length === 0 && (
+          <RnCard className="mt-5 p-10 text-center">
+            <p className="font-nunito text-lg font-extrabold uppercase text-rn-text-muted">No upcoming matches</p>
+            <p className="mt-2 text-sm text-rn-text-muted">Register for a tournament to get started.</p>
+            <Link href="/tournaments" className="mt-4 inline-block text-sm font-extrabold text-saffron">
               Browse Tournaments →
             </Link>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-border bg-surface-raised overflow-hidden">
-            <div className="divide-y divide-border">
-              {upcomingMatches.map((m) => {
-                const needsLineup = m.status === 'OPEN_FOR_SUBMISSION' || m.status === 'TIEBREAK_REQUIRED'
-                return (
-                  <Link
-                    key={m.id}
-                    href={`/matches/${m.slug}`}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-surface-overlay transition-colors group"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-text-primary group-hover:text-brand-400 transition-colors truncate">
-                        {m.homeTeam.name} vs {m.awayTeam.name}
-                      </p>
-                      <p className="text-xs text-text-muted">{m.tournament.name}</p>
-                    </div>
-                    <span className={[
-                      'text-xs font-bold uppercase shrink-0 ml-3',
-                      needsLineup ? 'text-brand-400' :
-                      m.status === 'IN_PROGRESS' ? 'text-success' :
-                      'text-text-muted',
-                    ].join(' ')}>
-                      {needsLineup ? 'Submit lineup' : m.status.replace(/_/g, ' ')}
-                    </span>
-                  </Link>
-                )
-              })}
+          </RnCard>
+        )}
+
+        {isAdmin && (
+          <div className="mt-8 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="h-0.5 w-4 bg-saffron" />
+              <p className="text-sm font-black uppercase tracking-[.15em] text-saffron">My Tournaments</p>
             </div>
+
+            <Link href="/admin/tournaments/new" className={cn(rnButtonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}>
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+              </svg>
+              Create Tournament
+            </Link>
+
+            {managedTournaments.length > 0 && (
+              <RnCard className="overflow-hidden">
+                <div className="border-b border-rn-border bg-saffron-tint px-4 py-3">
+                  <p className="text-xs font-extrabold uppercase tracking-wider text-rn-text-secondary">
+                    Your Tournaments
+                  </p>
+                </div>
+                <div className="divide-y divide-rn-border">
+                  {managedTournaments.map((t) => (
+                    <Link
+                      key={t.slug}
+                      href={`/manage/${t.slug}`}
+                      className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-saffron-tint"
+                    >
+                      <span className="truncate text-sm font-bold text-ink">{t.name}</span>
+                      <span
+                        className={cn(
+                          'ml-3 shrink-0 text-xs font-extrabold uppercase',
+                          t.status === 'ACTIVE'
+                            ? 'text-saffron'
+                            : t.status === 'REGISTRATION_OPEN' || t.status === 'COMPLETED'
+                              ? 'text-rn-green'
+                              : 'text-rn-text-muted',
+                        )}
+                      >
+                        {STATUS_LABEL[t.status] ?? t.status}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </RnCard>
+            )}
           </div>
         )}
       </div>
-
     </div>
   )
 }
