@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { formatDate, formatTime } from '@/lib/utils'
+import { RnCard } from '@/components/rn/RnCard'
 
 export const metadata: Metadata = { title: 'My Matches' }
 
@@ -15,14 +16,7 @@ const STATUS_LABEL: Record<string, string> = {
   COMPLETED: 'Completed',
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  UPCOMING: 'text-text-muted',
-  OPEN_FOR_SUBMISSION: 'text-brand-400',
-  LOCKED: 'text-info',
-  IN_PROGRESS: 'text-success',
-  TIEBREAK_REQUIRED: 'text-warning',
-  COMPLETED: 'text-text-muted',
-}
+const ROW_ACCENTS = ['#F4C24B', '#19A463', '#F26B21', '#3E9BD8']
 
 export default async function MyMatchesPage() {
   const user = await requireAuth()
@@ -71,155 +65,145 @@ export default async function MyMatchesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 space-y-8">
-
-      <div className="border-b border-border pb-5">
-        <p className="text-brand-500 text-xs font-bold tracking-[0.2em] uppercase font-display mb-1">
-          Player
-        </p>
-        <h1 className="font-display font-black text-5xl uppercase text-text-primary leading-tight">
-          My Matches
-        </h1>
-        <p className="text-text-secondary text-sm mt-1">
-          All your tournament matches across seasons.
-        </p>
-      </div>
-
-      {allMatches.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center">
-          <p className="font-display font-bold text-lg uppercase text-text-muted">No matches yet</p>
-          <p className="text-text-muted text-sm mt-2">Register for a tournament to get started.</p>
-          <Link
-            href="/tournaments"
-            className="inline-block mt-4 text-brand-500 text-sm font-semibold hover:text-brand-400 transition-colors"
-          >
-            Browse Tournaments →
-          </Link>
+    <div className="min-h-screen bg-paper font-nunito text-ink">
+      <div className="mx-auto max-w-2xl space-y-8 px-4 py-8">
+        <div>
+          <p className="mb-1 text-xs font-extrabold tracking-[.2em] uppercase text-saffron">Player</p>
+          <h1 className="font-nunito text-3xl font-black uppercase tracking-tight text-ink">My Matches</h1>
+          <p className="mt-1 text-sm text-rn-text-secondary">All your tournament matches across seasons.</p>
         </div>
-      ) : (
-        <>
-          {/* Active & Upcoming */}
-          {active.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="h-0.5 w-4 bg-brand-500" />
-                <p className="text-brand-500 text-xs font-bold tracking-[0.2em] uppercase font-display">
-                  Upcoming & Live
-                </p>
-              </div>
 
-              <div className="rounded-lg border border-border bg-surface-raised overflow-hidden divide-y divide-border">
-                {active.map((m) => {
-                  const isMyTeamMatch =
-                    captainTeamIds.has(m.homeTeam.id) || captainTeamIds.has(m.awayTeam.id)
-                  const captainTeamId =
-                    (m.status === 'OPEN_FOR_SUBMISSION' || m.status === 'TIEBREAK_REQUIRED') && isMyTeamMatch
+        {allMatches.length === 0 ? (
+          <RnCard className="border-dashed p-12 text-center">
+            <p className="font-nunito text-lg font-extrabold uppercase text-rn-text-muted">No matches yet</p>
+            <p className="mt-2 text-sm text-rn-text-muted">Register for a tournament to get started.</p>
+            <Link href="/tournaments" className="mt-4 inline-block text-sm font-extrabold text-saffron">
+              Browse Tournaments →
+            </Link>
+          </RnCard>
+        ) : (
+          <>
+            {/* Active & Upcoming */}
+            {active.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-0.5 w-4 bg-saffron" />
+                  <p className="text-xs font-extrabold uppercase tracking-[.2em] text-saffron">Upcoming & Live</p>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  {active.map((m, i) => {
+                    const isMyTeamMatch =
+                      captainTeamIds.has(m.homeTeam.id) || captainTeamIds.has(m.awayTeam.id)
+                    const needsLineup =
+                      (m.status === 'OPEN_FOR_SUBMISSION' || m.status === 'TIEBREAK_REQUIRED') && isMyTeamMatch
+                    const captainTeamId = needsLineup
                       ? (captainTeamIds.has(m.homeTeam.id) ? m.homeTeam.id : m.awayTeam.id)
                       : null
 
-                  return (
-                    <div key={m.id} className="px-4 py-3.5">
-                      <div className="flex items-start justify-between gap-3">
+                    const meta = [
+                      m.tournament.name,
+                      m.group?.name,
+                      m.scheduledAt ? `${formatDate(m.scheduledAt)} · ${formatTime(m.scheduledAt)}` : null,
+                      m.court,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')
+
+                    return (
+                      <RnCard key={m.id} className="flex items-center gap-3 p-3.5">
+                        <span
+                          className="h-[38px] w-1.5 shrink-0 rounded"
+                          style={{ background: ROW_ACCENTS[i % ROW_ACCENTS.length] }}
+                        />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-text-primary truncate">
-                            {m.homeTeam.name} <span className="text-text-muted font-normal">vs</span> {m.awayTeam.name}
-                          </p>
-                          <p className="text-xs text-text-muted mt-0.5">
-                            {m.tournament.name}
-                            {m.group && ` · ${m.group.name}`}
-                          </p>
-                          {m.scheduledAt && (
-                            <p className="text-xs text-text-muted mt-0.5">
-                              {formatDate(m.scheduledAt)} · {formatTime(m.scheduledAt)}
-                              {m.court && ` · ${m.court}`}
-                            </p>
-                          )}
+                          <div className="truncate text-sm font-extrabold text-ink">
+                            {m.homeTeam.name} <span className="font-normal text-rn-text-muted">vs</span> {m.awayTeam.name}
+                          </div>
+                          <div className="mt-0.5 truncate text-xs text-rn-text-muted">{meta}</div>
                         </div>
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          <span className={['text-xs font-bold uppercase', STATUS_COLOR[m.status] ?? 'text-text-muted'].join(' ')}>
+                        {captainTeamId ? (
+                          <Link
+                            href={`/lineup/${m.id}?teamId=${captainTeamId}`}
+                            className="shrink-0 text-[11px] font-extrabold text-saffron"
+                          >
+                            LINEUP →
+                          </Link>
+                        ) : (
+                          <span className="shrink-0 text-[11px] font-extrabold uppercase text-rn-text-muted">
                             {STATUS_LABEL[m.status] ?? m.status}
                           </span>
-                          {captainTeamId && (
-                            <Link
-                              href={`/lineup/${m.id}?teamId=${captainTeamId}`}
-                              className="text-[11px] font-bold text-brand-400 hover:text-brand-300 border border-brand-500/40 rounded px-2 py-0.5 transition-colors"
-                            >
-                              Submit Lineup →
-                            </Link>
-                          )}
-                        </div>
+                        )}
+                      </RnCard>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Past matches grouped by tournament */}
+            {past.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-0.5 w-4 bg-rn-border" />
+                  <p className="text-xs font-extrabold uppercase tracking-[.2em] text-rn-text-muted">Past Matches</p>
+                </div>
+
+                {Object.values(pastByTournament).map((matches) => {
+                  const t = matches[0].tournament
+                  return (
+                    <RnCard key={t.id} className="overflow-hidden">
+                      <div className="flex items-center justify-between border-b border-rn-border bg-saffron-tint px-4 py-2.5">
+                        <p className="truncate text-xs font-extrabold uppercase tracking-wider text-rn-text-secondary">
+                          {t.name}
+                        </p>
+                        <Link
+                          href={`/tournaments/${t.slug}/results`}
+                          className="ml-3 shrink-0 text-[11px] font-bold text-rn-text-muted transition-colors hover:text-saffron"
+                        >
+                          Full results →
+                        </Link>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* Past matches grouped by tournament */}
-          {past.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="h-0.5 w-4 bg-border" />
-                <p className="text-text-muted text-xs font-bold tracking-[0.2em] uppercase font-display">
-                  Past Matches
-                </p>
-              </div>
-
-              {Object.values(pastByTournament).map((matches) => {
-                const t = matches[0].tournament
-                return (
-                  <div key={t.id} className="rounded-lg border border-border bg-surface-raised overflow-hidden">
-                    <div className="px-4 py-2.5 border-b border-border bg-surface-overlay flex items-center justify-between">
-                      <p className="text-xs font-display font-bold uppercase tracking-wider text-text-muted truncate">
-                        {t.name}
-                      </p>
-                      <Link
-                        href={`/tournaments/${t.slug}/results`}
-                        className="text-[11px] text-text-muted hover:text-brand-400 transition-colors shrink-0 ml-3"
-                      >
-                        Full results →
-                      </Link>
-                    </div>
-                    <div className="divide-y divide-border">
-                      {matches.map((m) => {
-                        const homeWon = m.winnerId === m.homeTeam.id
-                        const awayWon = m.winnerId === m.awayTeam.id
-                        return (
-                          <div key={m.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm text-text-primary truncate">
-                                <span className={homeWon ? 'font-bold' : 'text-text-secondary'}>
-                                  {m.homeTeam.name}
-                                </span>
-                                <span className="text-text-muted mx-1.5 font-normal">vs</span>
-                                <span className={awayWon ? 'font-bold' : 'text-text-secondary'}>
-                                  {m.awayTeam.name}
-                                </span>
-                              </p>
-                              {m.scheduledAt && (
-                                <p className="text-xs text-text-muted mt-0.5">
-                                  {formatDate(m.scheduledAt)}
-                                  {m.group && ` · ${m.group.name}`}
+                      <div className="divide-y divide-rn-border">
+                        {matches.map((m) => {
+                          const homeWon = m.winnerId === m.homeTeam.id
+                          const awayWon = m.winnerId === m.awayTeam.id
+                          return (
+                            <div key={m.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm text-ink">
+                                  <span className={homeWon ? 'font-extrabold' : 'text-rn-text-secondary'}>
+                                    {m.homeTeam.name}
+                                  </span>
+                                  <span className="mx-1.5 font-normal text-rn-text-muted">vs</span>
+                                  <span className={awayWon ? 'font-extrabold' : 'text-rn-text-secondary'}>
+                                    {m.awayTeam.name}
+                                  </span>
+                                </p>
+                                {m.scheduledAt && (
+                                  <p className="mt-0.5 text-xs text-rn-text-muted">
+                                    {formatDate(m.scheduledAt)}
+                                    {m.group && ` · ${m.group.name}`}
+                                  </p>
+                                )}
+                              </div>
+                              {m.homeTeamScore !== null && m.awayTeamScore !== null && (
+                                <p className="shrink-0 font-nunito text-sm font-black tabular-nums text-ink">
+                                  {m.homeTeamScore}–{m.awayTeamScore}
                                 </p>
                               )}
                             </div>
-                            {m.homeTeamScore !== null && m.awayTeamScore !== null && (
-                              <p className="text-sm font-black tabular-nums text-text-primary shrink-0 font-display">
-                                {m.homeTeamScore}–{m.awayTeamScore}
-                              </p>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-            </section>
-          )}
-        </>
-      )}
+                          )
+                        })}
+                      </div>
+                    </RnCard>
+                  )
+                })}
+              </section>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

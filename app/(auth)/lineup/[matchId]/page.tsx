@@ -68,7 +68,6 @@ export default async function LineupPage({ params, searchParams }: Props) {
             {match.awayTeam.name}
           </>
         }
-        className="pb-6"
       />
 
       <div className="mx-auto max-w-lg px-4 py-5 md:max-w-3xl">

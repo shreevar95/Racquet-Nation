@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface RnPageHeaderProps {
   eyebrow?: string
@@ -10,17 +11,20 @@ interface RnPageHeaderProps {
   className?: string
 }
 
-export function RnPageHeader({ eyebrow, title, backHref, right, children, className = '' }: RnPageHeaderProps) {
+export function RnPageHeader({ eyebrow, title, backHref, right, children, className }: RnPageHeaderProps) {
   return (
     <div
-      className={`relative overflow-hidden rounded-b-[28px] bg-gradient-to-br from-[#1B3A57] to-ink-deep px-5 pb-11 pt-3 text-white ${className}`}
+      className={cn(
+        'relative overflow-hidden rounded-b-[20px] bg-gradient-to-br from-[#1B3A57] to-ink-deep px-5 pb-4 pt-2.5 text-white',
+        className,
+      )}
     >
       <div className="pointer-events-none absolute -right-5 -top-[30px] h-[110px] w-[110px] rounded-full bg-white/10" />
       <div className="relative">
         {backHref && (
           <Link
             href={backHref}
-            className="mb-3 inline-flex items-center gap-1.5 text-sm font-extrabold text-white/90"
+            className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-extrabold text-white/90"
           >
             ← Back
           </Link>
@@ -29,10 +33,10 @@ export function RnPageHeader({ eyebrow, title, backHref, right, children, classN
           <div className="flex items-center justify-between gap-4">
             <div>
               {eyebrow && (
-                <div className="text-[11px] font-extrabold tracking-[.14em] text-white/80">{eyebrow}</div>
+                <div className="text-[10px] font-extrabold tracking-[.14em] text-white/80">{eyebrow}</div>
               )}
               {title && (
-                <div className="font-nunito text-[30px] font-black leading-none tracking-tight">{title}</div>
+                <div className="font-nunito text-lg font-black leading-tight tracking-tight">{title}</div>
               )}
             </div>
             {right}
