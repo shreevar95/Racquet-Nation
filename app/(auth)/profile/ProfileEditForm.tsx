@@ -2,15 +2,21 @@
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Avatar } from '@/components/ui/avatar'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
+import { rnButtonVariants } from '@/components/rn/RnButton'
+import { cn } from '@/lib/utils'
 import { updateProfile } from '@/actions/player'
 import type { AuthUser } from '@/lib/auth'
 
 interface Props {
   user: AuthUser
 }
+
+const fieldClassName =
+  'h-11 w-full rounded-xl border border-rn-border bg-rn-card px-3.5 text-sm text-ink placeholder:text-rn-text-muted focus:border-saffron focus:outline-none focus:ring-2 focus:ring-saffron/20 transition-colors'
+
+const labelClassName = 'text-[11px] font-extrabold uppercase tracking-[.08em] text-rn-text-muted'
 
 export function ProfileEditForm({ user }: Props) {
   const profile = user.playerProfile
@@ -57,113 +63,151 @@ export function ProfileEditForm({ user }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {/* Avatar + name header */}
-      <div className="flex items-center gap-4">
-        <Avatar src={user.avatarUrl} name={user.name} size="xl" />
-        <div>
-          <p className="font-semibold text-text-primary">{user.name}</p>
+      <RnCard className="flex items-center gap-4 p-5">
+        <RnTeamTile name={user.name} logoUrl={user.avatarUrl} color="#19A463" size="xl" className="rounded-full" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-extrabold text-ink">{user.name}</p>
           {profile?.slug && (
-            <p className="text-xs text-text-muted">racquetnation.com/players/{profile.slug}</p>
+            <p className="truncate text-xs text-rn-text-muted">racquetnation.com/players/{profile.slug}</p>
           )}
         </div>
-      </div>
+      </RnCard>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input
-          label="Full Name"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          label="Phone Number"
-          name="phone"
-          type="tel"
-          value={form.phone}
-          onChange={handleChange}
-          placeholder="+91 98765 43210"
-        />
-        <Input
-          label="Date of Birth"
-          name="dateOfBirth"
-          type="date"
-          value={form.dateOfBirth}
-          onChange={handleChange}
-        />
+      {/* Player details */}
+      <RnCard className="p-5">
+        <p className="mb-4 text-xs font-extrabold uppercase tracking-[.14em] text-saffron">Player Details</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="name" className={labelClassName}>Full Name</label>
+            <input
+              id="name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              className={fieldClassName}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="phone" className={labelClassName}>Phone Number</label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="+91 98765 43210"
+              className={fieldClassName}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="dateOfBirth" className={labelClassName}>Date of Birth</label>
+            <input
+              id="dateOfBirth"
+              name="dateOfBirth"
+              type="date"
+              value={form.dateOfBirth}
+              onChange={handleChange}
+              className={fieldClassName}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="gender" className={labelClassName}>Gender</label>
+            <select
+              id="gender"
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              className={fieldClassName}
+            >
+              <option value="">Prefer not to say</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="yearsPlaying" className={labelClassName}>Years Playing</label>
+            <input
+              id="yearsPlaying"
+              name="yearsPlaying"
+              type="number"
+              min="0"
+              max="50"
+              value={form.yearsPlaying}
+              onChange={handleChange}
+              placeholder="3"
+              className={fieldClassName}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="selfRating" className={labelClassName}>Self Rating (1.0 – 5.0)</label>
+            <input
+              id="selfRating"
+              name="selfRating"
+              type="number"
+              min="1"
+              max="5"
+              step="0.5"
+              value={form.selfRating}
+              onChange={handleChange}
+              placeholder="3.5"
+              className={fieldClassName}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <label htmlFor="location" className={labelClassName}>Location</label>
+            <input
+              id="location"
+              name="location"
+              value={form.location}
+              onChange={handleChange}
+              placeholder="Mumbai, India"
+              className={fieldClassName}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <label htmlFor="bio" className={labelClassName}>Bio</label>
+            <textarea
+              id="bio"
+              name="bio"
+              value={form.bio}
+              onChange={handleChange}
+              rows={3}
+              maxLength={500}
+              placeholder="Tell other players a bit about yourself..."
+              className={cn(fieldClassName, 'h-auto resize-none py-2.5')}
+            />
+          </div>
+        </div>
+      </RnCard>
+
+      {/* Emergency contact */}
+      <RnCard className="p-5">
+        <p className="mb-4 text-xs font-extrabold uppercase tracking-[.14em] text-saffron">Emergency Contact</p>
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary">Gender</label>
-          <select
-            name="gender"
-            value={form.gender}
-            onChange={handleChange}
-            className="h-10 rounded-md border border-border bg-surface-raised px-3 text-sm text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          >
-            <option value="">Prefer not to say</option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-            <option value="OTHER">Other</option>
-          </select>
-        </div>
-        <Input
-          label="Years Playing"
-          name="yearsPlaying"
-          type="number"
-          min="0"
-          max="50"
-          value={form.yearsPlaying}
-          onChange={handleChange}
-          placeholder="3"
-        />
-        <Input
-          label="Self Rating (1.0 – 5.0)"
-          name="selfRating"
-          type="number"
-          min="1"
-          max="5"
-          step="0.5"
-          value={form.selfRating}
-          onChange={handleChange}
-          placeholder="3.5"
-        />
-        <div className="sm:col-span-2 flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary">Location</label>
+          <label htmlFor="emergencyContact" className={labelClassName}>Emergency Contact</label>
           <input
-            name="location"
-            value={form.location}
-            onChange={handleChange}
-            placeholder="Mumbai, India"
-            className="h-10 rounded-md border border-border bg-surface-raised px-3 text-sm text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          />
-        </div>
-        <div className="sm:col-span-2 flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary">Bio</label>
-          <textarea
-            name="bio"
-            value={form.bio}
-            onChange={handleChange}
-            rows={3}
-            maxLength={500}
-            placeholder="Tell other players a bit about yourself..."
-            className="rounded-md border border-border bg-surface-raised px-3 py-2 text-sm text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-none"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <Input
-            label="Emergency Contact"
+            id="emergencyContact"
             name="emergencyContact"
             value={form.emergencyContact}
             onChange={handleChange}
             placeholder="Name — Phone number"
+            className={fieldClassName}
           />
         </div>
-      </div>
+      </RnCard>
 
       <div className="flex justify-end">
-        <Button type="submit" loading={isPending}>
-          Save Changes
-        </Button>
+        <button
+          type="submit"
+          disabled={isPending}
+          className={cn(rnButtonVariants({ variant: 'primary', size: 'lg' }))}
+        >
+          {isPending ? 'Saving…' : 'Save Changes'}
+        </button>
       </div>
     </form>
   )
