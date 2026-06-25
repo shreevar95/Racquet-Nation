@@ -83,7 +83,7 @@ export function PushNotificationButton() {
 
   if (permission === 'denied') {
     return (
-      <div className="flex items-center gap-2 text-xs text-text-muted">
+      <div className="flex items-center gap-2 text-xs text-[#13243A]/70">
         <BellOff size={14} />
         Notifications blocked — allow in browser settings
       </div>
@@ -96,7 +96,7 @@ export function PushNotificationButton() {
       size="sm"
       onClick={subscribed ? disable : enable}
       disabled={loading}
-      className={`gap-2 text-sm border border-border ${subscribed ? 'text-brand-400 border-brand-500/40' : 'text-text-secondary'}`}
+      className={`gap-2 border text-sm text-[#13243A] ${subscribed ? 'border-[#13243A]/30 bg-[#13243A]/[0.06]' : 'border-[#13243A]/25'}`}
     >
       {subscribed ? <Bell size={15} /> : <BellOff size={15} />}
       {subscribed ? 'Notifications on' : 'Enable notifications'}

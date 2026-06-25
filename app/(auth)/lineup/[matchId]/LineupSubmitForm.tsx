@@ -2,8 +2,11 @@
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Avatar } from '@/components/ui/avatar'
+import { rnButtonVariants } from '@/components/rn/RnButton'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
+import { RnBottomSheet } from '@/components/rn/RnBottomSheet'
+import { cn } from '@/lib/utils'
 import { submitLineup } from '@/actions/lineup'
 import { getPlayersPerSide, getGameTypeLabel } from '@/lib/gameTypes'
 
@@ -32,6 +35,13 @@ interface Props {
 }
 
 type SlotKey = `${number}-${number}`
+
+const PLAYER_COLORS = ['#F26B21', '#19A463', '#F4C24B', '#3E9BD8', '#6E86A8', '#B07CC0']
+
+function colorFor(roster: Player[], playerId: string): string {
+  const i = roster.findIndex((p) => p.playerId === playerId)
+  return PLAYER_COLORS[i % PLAYER_COLORS.length] ?? '#13243A'
+}
 
 function optimizeLineup(
   roster: Player[],
@@ -131,6 +141,7 @@ export function LineupSubmitForm({
 }: Props) {
   const [isPending, startTransition] = useTransition()
   const [submitted, setSubmitted] = useState(false)
+  const [picking, setPicking] = useState<SlotKey | null>(null)
 
   const initialSlots: Record<SlotKey, string> = {}
   existingSlots.forEach((s) => {
@@ -192,27 +203,6 @@ export function LineupSubmitForm({
     })
   }
 
-  if (submitted) {
-    return (
-      <div className="space-y-3">
-        <div className="rounded-lg border border-success/30 bg-success-bg p-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-success font-semibold text-sm">Lineup saved</p>
-            <p className="text-xs text-text-secondary mt-0.5">
-              You can edit it until the admin closes the submission window.
-            </p>
-          </div>
-          <button
-            onClick={() => setSubmitted(false)}
-            className="text-xs font-semibold text-brand-400 hover:text-brand-300 border border-brand-500/40 rounded px-3 py-1.5 transition-colors shrink-0"
-          >
-            Edit Lineup
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   // Build a map: playerId → sorted list of game numbers they appear in
   const playerGames: Record<string, number[]> = {}
   for (let g = 1; g <= gamesPerMatch; g++) {
@@ -226,68 +216,128 @@ export function LineupSubmitForm({
   }
   const multiGamePlayers = roster.filter((p) => (playerGames[p.playerId]?.length ?? 0) > 1)
 
+  // All (game, position) slot keys, in display order
+  const allSlotKeys: { key: SlotKey; game: number; position: number }[] = []
+  for (let game = 1; game <= gamesPerMatch; game++) {
+    for (let pos = 1; pos <= slotsForGame(game); pos++) {
+      allSlotKeys.push({ key: `${game}-${pos}` as SlotKey, game, position: pos })
+    }
+  }
+  const filledCount = allSlotKeys.filter(({ key }) => !!slots[key]).length
+  const allFilled = filledCount === allSlotKeys.length
+
+  if (submitted) {
+    return (
+      <RnCard className="p-6 text-center shadow-[0_12px_28px_rgba(43,52,58,.10)]">
+        <div className="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl bg-saffron-tint text-[26px] text-saffron">
+          🔒
+        </div>
+        <div className="text-xl font-black tracking-tight text-ink">Lineup sealed</div>
+        <div className="mx-auto mt-2 max-w-[260px] text-sm leading-relaxed text-rn-text-muted">
+          Your selections are locked and hidden. They&apos;ll be visible once the admin reveals both lineups.
+        </div>
+
+        <div className="mt-4 rounded-xl bg-[#f7fafb] p-3.5 text-left">
+          {allSlotKeys.map(({ key, game, position }) => {
+            const pid = slots[key]
+            const player = roster.find((p) => p.playerId === pid)
+            const typeLabel = getGameTypeLabel(gameTypes[String(game)])
+            return (
+              <div key={key} className="flex justify-between py-1.5 text-sm">
+                <span className="font-semibold text-rn-text-muted">
+                  Game {game}{typeLabel ? ` · ${typeLabel}` : ''} · P{position}
+                </span>
+                <span className="font-extrabold text-ink">{player?.name ?? '—'}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setSubmitted(false)}
+          className="mt-4 text-xs font-extrabold text-saffron"
+        >
+          Edit lineup
+        </button>
+      </RnCard>
+    )
+  }
+
+  const pickingSlot = picking ? { game: Number(picking.split('-')[0]), position: Number(picking.split('-')[1]) } : null
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {Array.from({ length: gamesPerMatch }, (_, i) => i + 1).map((game) => {
-        const conflicts = getConflicts(game)
-        const typeLabel = getGameTypeLabel(gameTypes[String(game)])
-        return (
-          <div key={game} className="rounded-lg border border-border bg-surface-raised p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-text-primary">Game {game}</p>
-              {typeLabel && (
-                <span className="text-xs font-medium text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-full">
-                  {typeLabel}
-                </span>
-              )}
-            </div>
-            {Array.from({ length: slotsForGame(game) }, (_, j) => j + 1).map((position) => {
-              const key = `${game}-${position}` as SlotKey
-              const selected = slots[key]
-              const isConflict = selected && conflicts.has(selected)
-
-              return (
-                <div key={position} className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-text-muted">
-                    Player {position}
-                  </label>
-                  <select
-                    value={selected ?? ''}
-                    onChange={(e) => setSlot(game, position, e.target.value)}
-                    required
-                    className={[
-                      'h-10 rounded-md border px-3 text-sm text-text-primary focus:outline-none focus:ring-2',
-                      isConflict
-                        ? 'border-error bg-error-bg focus:ring-error/20'
-                        : 'border-border bg-surface focus:border-brand-500 focus:ring-brand-500/20',
-                    ].join(' ')}
-                  >
-                    <option value="">Select player...</option>
-                    {roster.map((p) => {
-                      // Show which other games this player is already in
-                      const otherGames = (playerGames[p.playerId] ?? []).filter((g) => g !== game)
-                      const suffix = otherGames.length > 0 ? ` (also G${otherGames.join(', G')})` : ''
-                      return (
-                        <option key={p.playerId} value={p.playerId}>
-                          {p.name}{p.rating != null ? ` [${p.rating.toFixed(1)}]` : ''}{suffix}
-                        </option>
-                      )
-                    })}
-                  </select>
-                  {isConflict && (
-                    <p className="text-xs text-error">Player already used in this game</p>
+      <div>
+        <div className="mb-2.5 text-[11px] font-extrabold tracking-[.14em] text-rn-text-muted">
+          ASSIGN YOUR POSITIONS
+        </div>
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+          {Array.from({ length: gamesPerMatch }, (_, i) => i + 1).map((game) => {
+            const conflicts = getConflicts(game)
+            const typeLabel = getGameTypeLabel(gameTypes[String(game)])
+            return (
+              <RnCard key={game} className="p-3.5">
+                <div className="mb-2.5 flex items-center gap-2">
+                  <span className="text-sm font-extrabold text-ink">Game {game}</span>
+                  {typeLabel && (
+                    <span className="rounded-full bg-saffron-tint px-2 py-0.5 text-xs font-bold text-saffron">
+                      {typeLabel}
+                    </span>
                   )}
                 </div>
-              )
-            })}
-          </div>
-        )
-      })}
+                <div className="flex flex-col gap-2">
+                  {Array.from({ length: slotsForGame(game) }, (_, j) => j + 1).map((position) => {
+                    const key = `${game}-${position}` as SlotKey
+                    const selected = slots[key]
+                    const player = roster.find((p) => p.playerId === selected)
+                    const isConflict = selected && conflicts.has(selected)
+                    const otherGames = player ? (playerGames[player.playerId] ?? []).filter((g) => g !== game) : []
+
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setPicking(key)}
+                        className={cn(
+                          'flex items-center justify-between gap-3 rounded-xl border bg-rn-card px-3.5 py-3 text-left',
+                          isConflict ? 'border-red-down bg-red-down/5' : 'border-rn-border',
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {player && <RnTeamTile name={player.name} color={colorFor(roster, player.playerId)} size="sm" />}
+                          <div className="min-w-0">
+                            <div className="text-[10px] font-extrabold tracking-[.1em] text-rn-text-muted">
+                              Player {position}
+                            </div>
+                            <div className={cn('mt-0.5 truncate text-sm', player ? 'font-extrabold text-ink' : 'font-semibold text-rn-text-muted')}>
+                              {player ? player.name : 'Tap to assign'}
+                              {otherGames.length > 0 && (
+                                <span className="text-rn-text-muted"> (also G{otherGames.join(', G')})</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-xs font-extrabold text-saffron">
+                          {player ? 'Change' : 'Select'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+                {[...conflicts].length > 0 && (
+                  <p className="mt-2 text-xs font-semibold text-red-down">Player already used in this game</p>
+                )}
+              </RnCard>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Players selected in multiple games */}
       {multiGamePlayers.length > 0 && (
-        <div className="rounded-lg border border-info/30 bg-info-bg px-4 py-3 text-sm text-info space-y-1">
-          <p className="font-semibold">Playing multiple games</p>
+        <div className="rounded-xl border border-rn-blue/30 bg-rn-blue/10 px-4 py-3 text-sm text-rn-blue">
+          <p className="font-extrabold">Playing multiple games</p>
           {multiGamePlayers.map((p) => (
             <p key={p.playerId}>
               {p.name} — Games {playerGames[p.playerId].join(', ')}
@@ -302,14 +352,13 @@ export function LineupSubmitForm({
         const unassigned = roster.filter((p) => !usedIds.has(p.playerId))
         if (unassigned.length === 0) return null
         return (
-          <div className="rounded-lg border border-warning/40 bg-warning-bg px-4 py-3 text-sm text-warning">
-            <p className="font-semibold mb-1">Not yet assigned ({unassigned.length})</p>
-            <p>{unassigned.map((p) => p.name).join(', ')}</p>
+          <div className="rounded-xl border border-saffron/30 bg-saffron-tint px-4 py-3 text-sm text-saffron">
+            <p className="mb-1 font-extrabold">Not yet assigned ({unassigned.length})</p>
+            <p className="font-semibold">{unassigned.map((p) => p.name).join(', ')}</p>
           </div>
         )
       })()}
 
-      {/* Auto-optimize button */}
       <button
         type="button"
         onClick={() => {
@@ -317,14 +366,53 @@ export function LineupSubmitForm({
           setSlots(optimized as Record<SlotKey, string>)
           toast.success('Lineup optimized by rating')
         }}
-        className="w-full py-2.5 rounded-lg border border-success/40 text-success text-sm font-semibold hover:bg-success/10 transition-colors"
+        className={cn(rnButtonVariants({ variant: 'secondary' }), 'w-full')}
       >
         ★ Auto-optimize Lineup
       </button>
 
-      <Button type="submit" loading={isPending} className="w-full" size="lg">
-        Submit Lineup
-      </Button>
+      <div>
+        <button
+          type="submit"
+          disabled={!allFilled || isPending}
+          className={cn(rnButtonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}
+        >
+          {isPending ? 'Submitting…' : 'Lock in lineup'}
+        </button>
+        <p className="mt-2.5 text-center text-xs font-semibold text-rn-text-muted">
+          {filledCount} of {allSlotKeys.length} positions set
+        </p>
+      </div>
+
+      <RnBottomSheet open={picking !== null} onClose={() => setPicking(null)} title="Choose a player">
+        <div className="flex flex-col gap-2">
+          {roster.map((p) => {
+            const otherGames = pickingSlot
+              ? (playerGames[p.playerId] ?? []).filter((g) => g !== pickingSlot.game)
+              : []
+            return (
+              <button
+                key={p.playerId}
+                type="button"
+                onClick={() => {
+                  if (pickingSlot) setSlot(pickingSlot.game, pickingSlot.position, p.playerId)
+                  setPicking(null)
+                }}
+                className="flex items-center gap-2.5 rounded-xl border border-rn-border bg-rn-card px-3.5 py-3 text-left"
+              >
+                <RnTeamTile name={p.name} color={colorFor(roster, p.playerId)} size="sm" />
+                <span className="text-sm font-bold text-ink">
+                  {p.name}
+                  {p.rating != null && <span className="text-rn-text-muted"> [{p.rating.toFixed(1)}]</span>}
+                  {otherGames.length > 0 && (
+                    <span className="text-rn-text-muted"> (also G{otherGames.join(', G')})</span>
+                  )}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </RnBottomSheet>
     </form>
   )
 }

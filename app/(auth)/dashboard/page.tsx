@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PushNotificationButton } from '@/components/PushNotificationButton'
-import { RnPageHeader } from '@/components/rn/RnPageHeader'
 import { RnCard } from '@/components/rn/RnCard'
 import { RnTeamTile } from '@/components/rn/RnTeamTile'
 import { rnButtonVariants } from '@/components/rn/RnButton'
@@ -110,15 +109,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="bg-paper font-nunito text-ink">
-      <RnPageHeader
-        eyebrow="WELCOME BACK"
-        title={firstName}
-        right={<RnTeamTile name={user.name} color="#19A463" logoUrl={user.avatarUrl} size="lg" className="rounded-full" />}
-      />
-
       <div className="mx-auto max-w-2xl px-4 pb-10">
+        <div className="pt-4">
+          <div className="text-[11px] font-extrabold tracking-[.14em] text-saffron">WELCOME BACK</div>
+          <div className="font-nunito text-2xl font-black leading-none text-ink">{firstName}</div>
+        </div>
+
         {nextMatch && (
-          <RnCard className="-mt-7 p-4 shadow-[0_12px_28px_rgba(43,52,58,.12)]">
+          <RnCard className="mt-4 p-4 shadow-[0_12px_28px_rgba(43,52,58,.12)]">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[10px] font-extrabold tracking-[.16em] text-saffron">YOUR NEXT MATCH</span>
               <span className="text-[10px] font-extrabold text-rn-green">

@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { canSubmitLineup } from '@/lib/permissions'
+import { RnPageHeader } from '@/components/rn/RnPageHeader'
 import { LineupSubmitForm } from './LineupSubmitForm'
 
 interface Props {
@@ -57,39 +58,42 @@ export default async function LineupPage({ params, searchParams }: Props) {
   const isEdit = !!existingLineup
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
-      <div>
-        <h1 className="text-xl font-bold text-text-primary">
-          {isEdit ? 'Edit Lineup' : 'Submit Lineup'}
-        </h1>
-        <p className="text-sm text-text-secondary">
-          {team.name} · {match.tournament.name}
-        </p>
-        <p className="text-xs text-text-muted mt-0.5">
-          {match.homeTeam.name} vs {match.awayTeam.name}
-        </p>
+    <div className="min-h-screen bg-paper font-nunito text-ink">
+      <RnPageHeader
+        backHref="/dashboard"
+        eyebrow={`${isEdit ? 'EDIT' : 'SUBMIT'} LINEUP · ${team.name}`}
+        title={
+          <>
+            {match.homeTeam.name} <span className="text-[13px] font-extrabold tracking-[.14em] text-white/70">VS</span>{' '}
+            {match.awayTeam.name}
+          </>
+        }
+        className="pb-6"
+      />
+
+      <div className="mx-auto max-w-lg px-4 py-5 md:max-w-3xl">
         {isEdit && (
-          <p className="text-xs text-brand-400 mt-1">
+          <p className="mb-4 text-xs font-semibold text-rn-text-secondary">
             You can update your lineup until the admin closes the submission window.
           </p>
         )}
-      </div>
 
-      <LineupSubmitForm
-        matchId={matchId}
-        teamId={teamId}
-        gamesPerMatch={matchFormat.gamesPerMatch}
-        playersPerSide={matchFormat.playersPerSide}
-        gameTypes={gameTypes}
-        roster={roster.map((m) => ({
-          playerId: m.playerId,
-          name: m.player.user.name,
-          avatarUrl: m.player.user.avatarUrl,
-          rating: m.player.selfRating,
-          gender: m.player.gender as string | null,
-        }))}
-        existingSlots={existingLineup?.slots ?? []}
-      />
+        <LineupSubmitForm
+          matchId={matchId}
+          teamId={teamId}
+          gamesPerMatch={matchFormat.gamesPerMatch}
+          playersPerSide={matchFormat.playersPerSide}
+          gameTypes={gameTypes}
+          roster={roster.map((m) => ({
+            playerId: m.playerId,
+            name: m.player.user.name,
+            avatarUrl: m.player.user.avatarUrl,
+            rating: m.player.selfRating,
+            gender: m.player.gender as string | null,
+          }))}
+          existingSlots={existingLineup?.slots ?? []}
+        />
+      </div>
     </div>
   )
 }
