@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { formatDate, formatTime } from '@/lib/utils'
 import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
 import { WithdrawButton } from './WithdrawButton'
 
 interface Props {
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const revalidate = 60
 
 const STATUS_STYLE: Record<string, string> = {
-  UPCOMING: 'bg-rn-text-muted/10 text-rn-text-muted',
+  UPCOMING: 'bg-rn-blue/10 text-rn-blue',
   OPEN_FOR_SUBMISSION: 'bg-rn-blue/10 text-rn-blue',
   LOCKED: 'bg-saffron-tint text-saffron',
   IN_PROGRESS: 'bg-saffron-tint text-saffron',
@@ -54,7 +55,7 @@ export default async function TournamentOverviewPage({ params }: Props) {
       groups: {
         include: {
           standings: {
-            include: { team: { select: { name: true, slug: true } } },
+            include: { team: { select: { name: true, slug: true, primaryColor: true, logoUrl: true } } },
             orderBy: { position: 'asc' },
             take: 4,
           },
@@ -212,39 +213,40 @@ export default async function TournamentOverviewPage({ params }: Props) {
               Full standings →
             </Link>
           </div>
-          {tournament.groups.map((group) =>
-            group.standings.length > 0 ? (
-              <RnCard key={group.id} className="overflow-hidden">
-                <div className="border-b border-rn-border bg-saffron-tint px-4 py-2.5">
-                  <p className="text-xs font-extrabold uppercase tracking-wider text-rn-text-secondary">
-                    {group.name}
-                  </p>
-                </div>
-                <div className="divide-y divide-rn-border">
-                  {group.standings.map((row) => (
-                    <div key={row.teamId} className="flex items-center gap-3 px-4 py-3">
-                      <span className={[
-                        'w-5 shrink-0 font-nunito text-sm font-black',
-                        row.position === 1 ? 'text-saffron' : 'text-rn-text-muted',
-                      ].join(' ')}>
-                        {row.position}
-                      </span>
-                      <Link
-                        href={`/teams/${row.team.slug}`}
-                        className="flex-1 truncate text-sm font-bold text-ink transition-colors hover:text-saffron"
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {tournament.groups.map((group) =>
+              group.standings.length > 0 ? (
+                <RnCard key={group.id} className="overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-rn-border px-4 py-2.5">
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">
+                      # · Team · {group.name}
+                    </p>
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">Pts</p>
+                  </div>
+                  <div className="divide-y divide-rn-border">
+                    {group.standings.map((row) => (
+                      <div
+                        key={row.teamId}
+                        className={`flex items-center gap-3 px-4 py-3.5 ${captainTeamIds.has(row.teamId) ? 'bg-[#FFF1E7]' : ''}`}
                       >
-                        {row.team.name}
-                      </Link>
-                      <div className="flex shrink-0 gap-4 text-xs text-rn-text-muted">
-                        <span>{row.matchesWon}W · {row.matchesLost}L</span>
-                        <span className="font-nunito font-black text-ink">{row.points}pts</span>
+                        <span className="w-5 shrink-0 text-center font-nunito text-sm font-black text-saffron">
+                          {row.position}
+                        </span>
+                        <RnTeamTile name={row.team.name} color={row.team.primaryColor} logoUrl={row.team.logoUrl} size="sm" />
+                        <Link
+                          href={`/teams/${row.team.slug}`}
+                          className="flex-1 truncate text-sm font-extrabold text-ink transition-colors hover:text-saffron"
+                        >
+                          {row.team.name}
+                        </Link>
+                        <span className="shrink-0 font-nunito text-base font-black text-ink">{row.points}</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </RnCard>
-            ) : null,
-          )}
+                    ))}
+                  </div>
+                </RnCard>
+              ) : null,
+            )}
+          </div>
         </div>
       )}
 

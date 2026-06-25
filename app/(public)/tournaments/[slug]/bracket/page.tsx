@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Trophy, ChevronRight } from 'lucide-react'
+import { Trophy } from 'lucide-react'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
+import { cn } from '@/lib/utils'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -23,7 +26,7 @@ export default async function BracketPage({ params }: Props) {
         include: {
           standings: {
             orderBy: { position: 'asc' },
-            include: { team: { select: { id: true, name: true, slug: true } } },
+            include: { team: { select: { id: true, name: true, slug: true, primaryColor: true, logoUrl: true } } },
           },
           matches: {
             where: { status: 'COMPLETED' },
@@ -63,7 +66,7 @@ export default async function BracketPage({ params }: Props) {
   const finalGroup = tournament.groups.find((g) => g.name === 'Final')
 
   // Build qualifier list (teams that advance from each group) — used for bracket only
-  const qualifiers: Array<{ teamId: string; teamName: string; groupName: string; position: number }> = []
+  const qualifiers: Qualifier[] = []
   for (const group of groupStageGroups) {
     const advancers = group.standings.slice(0, teamsAdvance)
     for (const s of advancers) {
@@ -72,6 +75,8 @@ export default async function BracketPage({ params }: Props) {
         teamName: s.team.name,
         groupName: group.name,
         position: s.position,
+        primaryColor: s.team.primaryColor,
+        logoUrl: s.team.logoUrl,
       })
     }
   }
@@ -103,12 +108,12 @@ export default async function BracketPage({ params }: Props) {
         <div>
           <SectionHeader label="Final Stage" />
           {!finalGroup ? (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center">
-              <Trophy className="mx-auto text-brand-500 mb-3" size={28} />
-              <p className="text-sm text-text-secondary">
+            <RnCard className="border-dashed p-8 text-center">
+              <Trophy className="mx-auto mb-3 text-saffron" size={28} />
+              <p className="text-sm text-rn-text-secondary">
                 Final stage will appear once group stage is complete.
               </p>
-            </div>
+            </RnCard>
           ) : (
             <div className="max-w-md">
               <GroupCard group={finalGroup} teamsAdvance={0} />
@@ -122,11 +127,11 @@ export default async function BracketPage({ params }: Props) {
         <div>
           <SectionHeader label="Knockout Bracket" />
           {qualifiers.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center">
-              <p className="text-sm text-text-secondary">
+            <RnCard className="border-dashed p-8 text-center">
+              <p className="text-sm text-rn-text-secondary">
                 Knockout bracket will appear once group stage is complete.
               </p>
-            </div>
+            </RnCard>
           ) : (
             <div className="overflow-x-auto pb-4">
               <KnockoutBracket qualifiers={qualifiers} bracketSize={bracketSize} rounds={rounds} />
@@ -137,12 +142,12 @@ export default async function BracketPage({ params }: Props) {
 
       {/* Pure knockout (no groups) */}
       {structure === 'KNOCKOUT_ONLY' && (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <Trophy className="mx-auto text-brand-500 mb-3" size={32} />
-          <p className="text-sm text-text-secondary">
+        <RnCard className="border-dashed p-8 text-center">
+          <Trophy className="mx-auto mb-3 text-saffron" size={32} />
+          <p className="text-sm text-rn-text-secondary">
             Knockout bracket will be shown here once matches are scheduled.
           </p>
-        </div>
+        </RnCard>
       )}
     </div>
   )
@@ -158,7 +163,7 @@ type GroupData = {
     matchesLost: number
     matchesDrawn: number
     points: number
-    team: { id: string; name: string; slug: string }
+    team: { id: string; name: string; slug: string; primaryColor: string | null; logoUrl: string | null }
   }>
   matches: Array<{
     id: string
@@ -174,75 +179,79 @@ type GroupData = {
 
 function GroupCard({ group, teamsAdvance }: { group: GroupData; teamsAdvance: number }) {
   return (
-    <div className="rounded-xl border border-border bg-surface-raised overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-border bg-surface-overlay flex items-center justify-between">
-        <p className="text-xs font-display font-bold uppercase tracking-wider text-text-muted">
+    <RnCard className="overflow-hidden">
+      <div className="flex items-center justify-between border-b border-rn-border px-4 py-2.5">
+        <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">
           {group.name}
         </p>
-        <p className="text-[10px] text-text-muted">
+        <p className="text-[10px] text-rn-text-muted">
           {group.matches.length} played
         </p>
       </div>
 
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-rn-border">
         {group.standings.map((row) => {
           const advances = teamsAdvance > 0 && row.position <= teamsAdvance
           return (
             <div
               key={row.teamId}
-              className={['flex items-center gap-2 px-4 py-2.5', advances ? 'bg-brand-500/15 border-l-2 border-brand-500' : ''].join(' ')}
+              className={cn(
+                'flex items-center gap-2.5 px-4 py-2.5',
+                advances && 'border-l-2 border-saffron bg-saffron-tint',
+              )}
             >
-              <span className={['text-xs font-black font-display w-4 shrink-0 text-center', row.position === 1 ? 'text-brand-500' : 'text-text-muted'].join(' ')}>
+              <span className="w-4 shrink-0 text-center font-nunito text-xs font-black text-saffron">
                 {row.position}
               </span>
-              <span className="flex-1 text-sm font-semibold text-text-primary truncate min-w-0">
+              <RnTeamTile name={row.team.name} color={row.team.primaryColor} logoUrl={row.team.logoUrl} size="sm" />
+              <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-ink">
                 {row.team.name}
               </span>
-              <span className="text-xs tabular-nums shrink-0 w-16 text-right">
-                <span className="text-success font-medium">{row.matchesWon}W</span>
+              <span className="w-16 shrink-0 text-right text-xs tabular-nums">
+                <span className="font-bold text-rn-green">{row.matchesWon}W</span>
                 {' '}
-                <span className="text-error">{row.matchesLost}L</span>
-                {row.matchesDrawn > 0 && <span className="text-text-secondary"> {row.matchesDrawn}D</span>}
+                <span className="font-bold text-red-down">{row.matchesLost}L</span>
+                {row.matchesDrawn > 0 && <span className="text-rn-text-muted"> {row.matchesDrawn}D</span>}
               </span>
-              <span className="text-xs font-black text-brand-400 font-display w-7 text-right shrink-0">
+              <span className="w-7 shrink-0 text-right font-nunito text-xs font-black text-ink">
                 {row.points}
               </span>
             </div>
           )
         })}
         {group.standings.length === 0 && (
-          <div className="px-4 py-6 text-center text-xs text-text-muted">
+          <div className="px-4 py-6 text-center text-xs text-rn-text-muted">
             No results yet
           </div>
         )}
       </div>
 
       {group.matches.length > 0 && (
-        <div className="border-t border-border px-4 py-2 space-y-1">
+        <div className="space-y-1 border-t border-rn-border px-4 py-2">
           {group.matches.slice(-3).map((m) => (
-            <div key={m.id} className="flex items-center justify-between text-[11px] gap-2">
-              <span className={['truncate min-w-0 flex-1', m.winnerId === m.homeTeamId ? 'text-text-primary font-semibold' : 'text-text-secondary'].join(' ')}>
+            <div key={m.id} className="flex items-center justify-between gap-2 text-[11px]">
+              <span className={cn('min-w-0 flex-1 truncate', m.winnerId === m.homeTeamId ? 'font-extrabold text-ink' : 'text-rn-text-secondary')}>
                 {m.homeTeam.name}
               </span>
-              <span className="text-text-muted tabular-nums shrink-0">
+              <span className="shrink-0 tabular-nums text-rn-text-muted">
                 {m.homeTeamScore}–{m.awayTeamScore}
               </span>
-              <span className={['truncate min-w-0 flex-1 text-right', m.winnerId === m.awayTeamId ? 'text-text-primary font-semibold' : 'text-text-secondary'].join(' ')}>
+              <span className={cn('min-w-0 flex-1 truncate text-right', m.winnerId === m.awayTeamId ? 'font-extrabold text-ink' : 'text-rn-text-secondary')}>
                 {m.awayTeam.name}
               </span>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </RnCard>
   )
 }
 
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 mb-4">
-      <span className="h-0.5 w-4 bg-brand-500" />
-      <p className="text-brand-500 text-xs font-bold tracking-[0.15em] uppercase font-display">
+    <div className="mb-4 flex items-center gap-2">
+      <span className="h-0.5 w-4 bg-saffron" />
+      <p className="text-xs font-extrabold uppercase tracking-[.15em] text-saffron">
         {label}
       </p>
     </div>
@@ -275,6 +284,8 @@ interface Qualifier {
   teamName: string
   groupName: string
   position: number
+  primaryColor: string | null
+  logoUrl: string | null
 }
 
 function KnockoutBracket({
@@ -304,11 +315,11 @@ function KnockoutBracket({
 
         if (isWinner) {
           return (
-            <div key="winner" className="flex flex-col items-center justify-center px-4 min-w-[120px]">
-              <Trophy size={24} className="text-brand-500 mb-2" />
-              <div className="rounded-lg border-2 border-brand-500/40 bg-brand-500/10 px-3 py-2 text-center">
-                <p className="text-[10px] font-bold text-brand-400 uppercase tracking-wider mb-1">Champion</p>
-                <p className="text-xs text-text-muted italic">TBD</p>
+            <div key="winner" className="flex min-w-[120px] flex-col items-center justify-center px-4">
+              <Trophy size={24} className="mb-2 text-saffron" />
+              <div className="rounded-lg border-2 border-saffron/40 bg-saffron-tint px-3 py-2 text-center">
+                <p className="mb-1 text-[10px] font-extrabold uppercase tracking-wider text-saffron">Champion</p>
+                <p className="text-xs italic text-rn-text-muted">TBD</p>
               </div>
             </div>
           )
@@ -319,10 +330,10 @@ function KnockoutBracket({
 
         return (
           <div key={roundLabel} className="flex flex-col" style={{ minWidth: 160 }}>
-            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider text-center mb-3 px-2">
+            <p className="mb-3 px-2 text-center text-[10px] font-extrabold uppercase tracking-wider text-rn-text-muted">
               {roundLabel}
             </p>
-            <div className="flex flex-col flex-1">
+            <div className="flex flex-1 flex-col">
               {Array.from({ length: matchCount }).map((_, matchIdx) => {
                 const top = roundIdx === 0 ? firstRoundPairs[matchIdx]?.[0] : null
                 const bottom = roundIdx === 0 ? firstRoundPairs[matchIdx]?.[1] : null
@@ -334,15 +345,15 @@ function KnockoutBracket({
                     style={{ height: rowHeight }}
                   >
                     <div className="flex-1 px-2">
-                      <div className="rounded-lg border border-border bg-surface-raised overflow-hidden">
+                      <RnCard className="overflow-hidden">
                         <MatchSlot team={top} />
-                        <div className="h-px bg-border" />
+                        <div className="h-px bg-rn-border" />
                         <MatchSlot team={bottom} />
-                      </div>
+                      </RnCard>
                     </div>
                     {roundIdx < roundCount - 1 && (
-                      <div className="w-4 self-stretch flex flex-col">
-                        <div className="flex-1 border-r border-border" />
+                      <div className="flex w-4 flex-col self-stretch">
+                        <div className="flex-1 border-r border-rn-border" />
                       </div>
                     )}
                   </div>
@@ -358,14 +369,17 @@ function KnockoutBracket({
 
 function MatchSlot({ team }: { team: Qualifier | null }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 min-h-[36px]">
+    <div className="flex min-h-[36px] items-center gap-2 px-3 py-2">
       {team ? (
-        <div className="flex flex-col min-w-0 flex-1">
-          <p className="text-xs font-semibold text-text-primary truncate">{team.teamName}</p>
-          <p className="text-[10px] text-text-secondary">{team.groupName} #{team.position}</p>
-        </div>
+        <>
+          <RnTeamTile name={team.teamName} color={team.primaryColor} logoUrl={team.logoUrl} size="sm" />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <p className="truncate text-xs font-extrabold text-ink">{team.teamName}</p>
+            <p className="text-[10px] text-rn-text-secondary">{team.groupName} #{team.position}</p>
+          </div>
+        </>
       ) : (
-        <p className="text-xs text-text-muted italic">TBD</p>
+        <p className="text-xs italic text-rn-text-muted">TBD</p>
       )}
     </div>
   )

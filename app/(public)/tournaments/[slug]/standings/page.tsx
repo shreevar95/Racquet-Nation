@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
-import { Badge } from '@/components/ui/badge'
-import { TeamAvatar } from '@/components/ui/team-avatar'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -14,6 +15,8 @@ export const revalidate = 30
 
 export default async function StandingsPage({ params }: Props) {
   const { slug } = await params
+  const { userId: clerkId } = await auth()
+
   const tournament = await prisma.tournament.findUnique({
     where: { slug, isPublic: true },
     include: {
@@ -30,67 +33,69 @@ export default async function StandingsPage({ params }: Props) {
   })
   if (!tournament) notFound()
 
+  // Find the captain teams for "my team" highlighting, same pattern as the overview page.
+  const captainTeamIds = new Set<string>()
+  if (clerkId) {
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { playerProfile: { select: { id: true } } },
+    })
+    if (dbUser?.playerProfile) {
+      const captainships = await prisma.teamMembership.findMany({
+        where: { playerId: dbUser.playerProfile.id, role: 'CAPTAIN', team: { tournamentId: tournament.id } },
+        select: { teamId: true },
+      })
+      captainships.forEach((c) => captainTeamIds.add(c.teamId))
+    }
+  }
+
   if (tournament.groups.every((g) => g.standings.length === 0)) {
     return (
-      <div className="rounded-lg border border-dashed border-border p-8 text-center">
-        <p className="text-text-muted text-sm">Standings will appear once matches have been played.</p>
-      </div>
+      <RnCard className="border-dashed p-8 text-center">
+        <p className="text-sm text-rn-text-muted">Standings will appear once matches have been played.</p>
+      </RnCard>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {tournament.groups.map((group) => (
-        <div key={group.id} className="space-y-2">
-          <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">{group.name}</p>
-          <div className="rounded-lg border border-border overflow-hidden">
-            {/* Table header */}
-            <div className="grid grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem] sm:grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem_3.5rem_2.5rem] gap-x-2 px-3 py-2 border-b border-border bg-surface text-xs font-semibold text-text-muted">
-              <span className="text-center">#</span>
-              <span>Team</span>
-              <span className="text-center hidden sm:block">MP</span>
-              <span className="text-center">W</span>
-              <span className="text-center">D</span>
-              <span className="text-center">L</span>
-              <span className="text-center hidden sm:block">GD</span>
-              <span className="text-center font-bold">Pts</span>
-            </div>
-            {/* Rows */}
-            {group.standings.map((row) => (
-              <div
-                key={row.teamId}
-                className={[
-                  'grid grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem] sm:grid-cols-[1.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem_3.5rem_2.5rem] gap-x-2 px-3 py-2.5 border-b border-border last:border-0 items-center text-sm',
-                  row.qualificationStatus === 'QUALIFIED' ? 'bg-success-bg/30' : '',
-                  row.qualificationStatus === 'ELIMINATED' ? 'opacity-60' : '',
-                ].join(' ')}
-              >
-                <span className="font-bold text-text-muted text-center">{row.position}</span>
-                <Link
-                  href={`/teams/${row.team.slug}`}
-                  className="flex items-center gap-2 font-medium text-text-primary hover:text-brand-400 transition-colors min-w-0"
-                >
-                  <TeamAvatar name={row.team.name} logoUrl={row.team.logoUrl} primaryColor={row.team.primaryColor} size="xs" />
-                  <span className="truncate">{row.team.name}</span>
-                </Link>
-                <span className="text-center text-text-muted hidden sm:block">{row.matchesPlayed}</span>
-                <span className="text-center text-success font-medium">{row.matchesWon}</span>
-                <span className="text-center text-text-muted">{row.matchesDrawn}</span>
-                <span className="text-center text-error">{row.matchesLost}</span>
-                <span className="text-center text-text-secondary hidden sm:block">
-                  {row.gameDifferential > 0 ? `+${row.gameDifferential}` : row.gameDifferential}
-                </span>
-                <span className="text-center font-bold text-text-primary">{row.points}</span>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {tournament.groups.map((group) =>
+        group.standings.length > 0 ? (
+          <div key={group.id} className="space-y-2">
+            <RnCard className="overflow-hidden">
+              <div className="flex items-center justify-between border-b border-rn-border px-4 py-2.5">
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">
+                  # · Team · {group.name}
+                </p>
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">Pts</p>
               </div>
-            ))}
-          </div>
-          {group.standings.length > 0 && (
-            <p className="text-xs text-text-muted">
+              <div className="divide-y divide-rn-border">
+                {group.standings.map((row) => (
+                  <div
+                    key={row.teamId}
+                    className={`flex items-center gap-3 px-4 py-3.5 ${captainTeamIds.has(row.teamId) ? 'bg-[#FFF1E7]' : ''}`}
+                  >
+                    <span className="w-5 shrink-0 text-center font-nunito text-sm font-black text-saffron">
+                      {row.position}
+                    </span>
+                    <RnTeamTile name={row.team.name} logoUrl={row.team.logoUrl} color={row.team.primaryColor} size="sm" />
+                    <Link
+                      href={`/teams/${row.team.slug}`}
+                      className="flex-1 truncate text-sm font-extrabold text-ink transition-colors hover:text-saffron"
+                    >
+                      {row.team.name}
+                    </Link>
+                    <span className="shrink-0 font-nunito text-base font-black text-ink">{row.points}</span>
+                  </div>
+                ))}
+              </div>
+            </RnCard>
+            <p className="text-xs text-rn-text-muted">
               Last updated {new Date(group.standings[0].lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
             </p>
-          )}
-        </div>
-      ))}
+          </div>
+        ) : null,
+      )}
     </div>
   )
 }
