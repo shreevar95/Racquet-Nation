@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TeamAvatarPicker } from '@/components/admin/TeamAvatarPicker'
+import { rnButtonVariants } from '@/components/rn/RnButton'
 import { createTeam } from '@/actions/team'
 
 interface Props {
@@ -47,9 +48,9 @@ export function CreateTeamForm({ tournamentId, groups }: Props) {
 
   if (!open) {
     return (
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+      <button type="button" onClick={() => setOpen(true)} className={rnButtonVariants({ variant: 'secondary', size: 'sm' })}>
         <Plus size={14} /> New Team
-      </Button>
+      </button>
     )
   }
 

@@ -64,7 +64,7 @@ export default async function TeamsPage({ params }: Props) {
         include: {
           player: { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },
         },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { appliedAt: 'asc' },
       })
     : []
 
