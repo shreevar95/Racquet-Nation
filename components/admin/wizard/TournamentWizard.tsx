@@ -4,7 +4,9 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { RnCard } from '@/components/rn/RnCard'
+import { rnButtonVariants } from '@/components/rn/RnButton'
+import { cn } from '@/lib/utils'
 import { createTournament, updateTournamentFull } from '@/actions/tournament'
 import type { CreateTournamentInput } from '@/types/tournament'
 import { Step1Basics } from './Step1Basics'
@@ -134,30 +136,30 @@ export function TournamentWizard({ sports, mode = 'create', tournamentId, tourna
   const stepProps = { data, update, onNext: next }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-nunito text-ink">
       {/* Step indicator */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide">
         {STEPS.map((s, i) => (
-          <div key={s.label} className="flex items-center shrink-0">
+          <div key={s.label} className="flex shrink-0 items-center">
             <button
               onClick={() => i < step && setStep(i)}
               disabled={i > step}
-              className={[
-                'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+              className={cn(
+                'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
                 i === step
-                  ? 'bg-brand-500 text-white'
+                  ? 'bg-saffron text-white'
                   : i < step
-                    ? 'bg-surface-overlay text-text-secondary cursor-pointer hover:bg-surface-raised'
-                    : 'bg-surface-overlay text-text-muted cursor-not-allowed opacity-50',
-              ].join(' ')}
+                    ? 'cursor-pointer bg-saffron-tint text-saffron hover:brightness-105'
+                    : 'cursor-not-allowed bg-rn-border/40 text-rn-text-muted opacity-60',
+              )}
             >
-              <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold border border-current">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] font-bold">
                 {i < step ? '✓' : i + 1}
               </span>
               <span className="hidden sm:inline">{s.label}</span>
             </button>
             {i < STEPS.length - 1 && (
-              <div className={`w-4 h-px mx-0.5 ${i < step ? 'bg-brand-500' : 'bg-border'}`} />
+              <div className={cn('mx-0.5 h-px w-4', i < step ? 'bg-saffron' : 'bg-rn-border')} />
             )}
           </div>
         ))}
@@ -165,36 +167,46 @@ export function TournamentWizard({ sports, mode = 'create', tournamentId, tourna
 
       {/* Step heading */}
       <div>
-        <h2 className="text-lg font-semibold text-text-primary">
+        <h2 className="font-nunito text-lg font-extrabold text-ink">
           {STEPS[step].label}
         </h2>
-        <p className="text-sm text-text-secondary">{STEPS[step].description}</p>
+        <p className="text-sm text-rn-text-secondary">{STEPS[step].description}</p>
       </div>
 
       {/* Step content */}
-      <div className="rounded-lg border border-border bg-surface-raised p-4 md:p-6">
+      <RnCard className="p-4 md:p-6">
         {step === 0 && <Step1Basics sports={sports} {...stepProps} />}
         {step === 1 && <Step2Structure {...stepProps} />}
         {step === 2 && <Step3Format {...stepProps} />}
         {step === 3 && <Step4Registration {...stepProps} />}
         {step === 4 && <Step5Standings {...stepProps} />}
         {step === 5 && <Step6Review data={data} mode={mode} />}
-      </div>
+      </RnCard>
 
       {/* Navigation */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={prev} disabled={step === 0}>
+        <button
+          type="button"
+          onClick={prev}
+          disabled={step === 0}
+          className={cn(rnButtonVariants({ variant: 'secondary' }), 'disabled:opacity-40')}
+        >
           <ChevronLeft size={16} /> Back
-        </Button>
+        </button>
 
         {step < STEPS.length - 1 ? (
-          <Button onClick={next}>
+          <button type="button" onClick={next} className={cn(rnButtonVariants({ variant: 'primary' }))}>
             Next <ChevronRight size={16} />
-          </Button>
+          </button>
         ) : (
-          <Button onClick={handleSubmit} loading={isPending}>
-            {mode === 'edit' ? 'Save Changes' : 'Create Tournament'}
-          </Button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isPending}
+            className={cn(rnButtonVariants({ variant: 'primary' }))}
+          >
+            {isPending ? 'Saving…' : mode === 'edit' ? 'Save Changes' : 'Create Tournament'}
+          </button>
         )}
       </div>
     </div>

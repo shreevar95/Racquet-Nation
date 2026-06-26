@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Input } from '@/components/ui/input'
 import type { CreateTournamentInput } from '@/types/tournament'
+import { rnFieldClassName, rnLabelClassName, rnOptionCardClassName } from './rnWizardStyles'
+import { cn } from '@/lib/utils'
 
 interface Props {
   data: CreateTournamentInput
@@ -26,25 +27,28 @@ function NumField({ label, value, min, max, onChange }: NumFieldProps) {
   }, [value])
 
   return (
-    <Input
-      label={label}
-      type="text"
-      inputMode="numeric"
-      pattern="[0-9]*"
-      value={raw}
-      onChange={(e) => {
-        const digits = e.target.value.replace(/[^0-9]/g, '')
-        setRaw(digits)
-        const n = parseInt(digits)
-        if (!isNaN(n) && n >= min && n <= max) onChange(n)
-      }}
-      onBlur={() => {
-        const n = parseInt(raw)
-        const clamped = isNaN(n) ? min : Math.max(min, Math.min(max, n))
-        setRaw(String(clamped))
-        onChange(clamped)
-      }}
-    />
+    <div className="flex flex-col gap-1.5">
+      <label className={rnLabelClassName}>{label}</label>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={raw}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/[^0-9]/g, '')
+          setRaw(digits)
+          const n = parseInt(digits)
+          if (!isNaN(n) && n >= min && n <= max) onChange(n)
+        }}
+        onBlur={() => {
+          const n = parseInt(raw)
+          const clamped = isNaN(n) ? min : Math.max(min, Math.min(max, n))
+          setRaw(String(clamped))
+          onChange(clamped)
+        }}
+        className={rnFieldClassName}
+      />
+    </div>
   )
 }
 
@@ -90,7 +94,7 @@ export function Step2Structure({ data, update }: Props) {
     <div className="space-y-5">
       {/* Tournament structure */}
       <div>
-        <p className="text-sm font-semibold text-text-primary mb-3">Tournament Format</p>
+        <p className="mb-3 text-sm font-bold text-ink">Tournament Format</p>
         <div className="grid gap-2">
           {STRUCTURE_OPTIONS.map((opt) => (
             <button
@@ -105,24 +109,19 @@ export function Step2Structure({ data, update }: Props) {
                   numGroups: opt.value === 'KNOCKOUT_ONLY' ? 0 : Math.max(1, data.numGroups),
                 })
               }
-              className={[
-                'flex items-start gap-3 rounded-lg border p-3 text-left transition-all',
-                structure === opt.value
-                  ? 'border-brand-500 bg-brand-500/10'
-                  : 'border-border bg-surface-raised hover:border-brand-500/50',
-              ].join(' ')}
+              className={rnOptionCardClassName(structure === opt.value)}
             >
               <span
-                className={[
-                  'mt-0.5 h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center',
-                  structure === opt.value ? 'border-brand-500' : 'border-border',
-                ].join(' ')}
+                className={cn(
+                  'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2',
+                  structure === opt.value ? 'border-saffron' : 'border-rn-border',
+                )}
               >
-                {structure === opt.value && <span className="h-2 w-2 rounded-full bg-brand-500" />}
+                {structure === opt.value && <span className="h-2 w-2 rounded-full bg-saffron" />}
               </span>
               <div>
-                <p className="text-sm font-semibold text-text-primary">{opt.label}</p>
-                <p className="text-xs text-text-secondary mt-0.5">{opt.description}</p>
+                <p className="text-sm font-bold text-ink">{opt.label}</p>
+                <p className="mt-0.5 text-xs text-rn-text-secondary">{opt.description}</p>
               </div>
             </button>
           ))}
@@ -170,7 +169,7 @@ export function Step2Structure({ data, update }: Props) {
       {/* Knockout type selector */}
       {hasKnockout && (
         <div>
-          <p className="text-sm font-semibold text-text-primary mb-3">Final Stage Format</p>
+          <p className="mb-3 text-sm font-bold text-ink">Final Stage Format</p>
           <div className="grid gap-2">
             {KNOCKOUT_TYPE_OPTIONS.map((opt) => (
               <button
@@ -179,26 +178,21 @@ export function Step2Structure({ data, update }: Props) {
                 onClick={() =>
                   update({ matchFormat: { ...data.matchFormat, knockoutType: opt.value as 'ROUND_ROBIN' | 'BRACKET' } })
                 }
-                className={[
-                  'flex items-start gap-3 rounded-lg border p-3 text-left transition-all',
-                  (data.matchFormat.knockoutType ?? 'ROUND_ROBIN') === opt.value
-                    ? 'border-brand-500 bg-brand-500/10'
-                    : 'border-border bg-surface-raised hover:border-brand-500/50',
-                ].join(' ')}
+                className={rnOptionCardClassName((data.matchFormat.knockoutType ?? 'ROUND_ROBIN') === opt.value)}
               >
                 <span
-                  className={[
-                    'mt-0.5 h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center',
-                    (data.matchFormat.knockoutType ?? 'ROUND_ROBIN') === opt.value ? 'border-brand-500' : 'border-border',
-                  ].join(' ')}
+                  className={cn(
+                    'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2',
+                    (data.matchFormat.knockoutType ?? 'ROUND_ROBIN') === opt.value ? 'border-saffron' : 'border-rn-border',
+                  )}
                 >
                   {(data.matchFormat.knockoutType ?? 'ROUND_ROBIN') === opt.value && (
-                    <span className="h-2 w-2 rounded-full bg-brand-500" />
+                    <span className="h-2 w-2 rounded-full bg-saffron" />
                   )}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-text-primary">{opt.label}</p>
-                  <p className="text-xs text-text-secondary mt-0.5">{opt.description}</p>
+                  <p className="text-sm font-bold text-ink">{opt.label}</p>
+                  <p className="mt-0.5 text-xs text-rn-text-secondary">{opt.description}</p>
                 </div>
               </button>
             ))}
@@ -206,17 +200,17 @@ export function Step2Structure({ data, update }: Props) {
         </div>
       )}
 
-      <div className="rounded-lg bg-surface border border-border p-4 space-y-2">
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Preview</p>
+      <div className="space-y-2 rounded-lg border border-rn-border bg-paper p-4">
+        <p className="text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">Preview</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-          <span className="text-text-secondary">Total players</span>
-          <span className="text-text-primary font-medium">{maxPlayers}</span>
+          <span className="text-rn-text-secondary">Total players</span>
+          <span className="font-bold text-ink">{maxPlayers}</span>
           {hasGroups && (
             <>
-              <span className="text-text-secondary">Teams per group</span>
-              <span className="text-text-primary font-medium">~{teamsPerGroup}</span>
-              <span className="text-text-secondary">Group matches (round-robin)</span>
-              <span className="text-text-primary font-medium">
+              <span className="text-rn-text-secondary">Teams per group</span>
+              <span className="font-bold text-ink">~{teamsPerGroup}</span>
+              <span className="text-rn-text-secondary">Group matches (round-robin)</span>
+              <span className="font-bold text-ink">
                 {data.numGroups} × {(teamsPerGroup * (teamsPerGroup - 1)) / 2} ={' '}
                 {data.numGroups * ((teamsPerGroup * (teamsPerGroup - 1)) / 2)}
               </span>
@@ -224,8 +218,8 @@ export function Step2Structure({ data, update }: Props) {
           )}
           {hasKnockout && (
             <>
-              <span className="text-text-secondary">Knockout entrants</span>
-              <span className="text-text-primary font-medium">
+              <span className="text-rn-text-secondary">Knockout entrants</span>
+              <span className="font-bold text-ink">
                 {hasGroups
                   ? data.numGroups * (data.matchFormat.teamsAdvancePerGroup ?? 2)
                   : data.numTeams}
@@ -236,7 +230,7 @@ export function Step2Structure({ data, update }: Props) {
       </div>
 
       {hasGroups && (
-        <p className="text-xs text-text-muted">
+        <p className="text-xs text-rn-text-muted">
           Groups are auto-generated (Group A, Group B…). Teams are assigned after registration
           closes.
         </p>

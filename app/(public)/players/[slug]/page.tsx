@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { RnPageHeader } from '@/components/rn/RnPageHeader'
 import { RnCard } from '@/components/rn/RnCard'
 import { RnTeamTile } from '@/components/rn/RnTeamTile'
 import { RnStatTile } from '@/components/rn/RnStatTile'
@@ -48,24 +49,24 @@ export default async function PublicPlayerPage({ params }: Props) {
   if (!profile) notFound()
 
   const { user } = profile
+  const currentTeam = profile.teamMemberships[0]?.team
 
   return (
     <div className="min-h-screen bg-paper font-nunito text-ink">
-      <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
-        {/* Header */}
+      <RnPageHeader>
         <div className="flex items-center gap-4">
           <RnTeamTile name={user.name} logoUrl={user.avatarUrl} color="#19A463" size="xl" className="rounded-full" />
-          <div className="space-y-1">
-            <h1 className="font-nunito text-2xl font-black text-ink">{user.name}</h1>
-            {profile.location && (
-              <p className="text-sm text-rn-text-secondary">{profile.location}</p>
-            )}
-            <p className="text-xs text-rn-text-muted">
-              Member since {formatDate(user.createdAt)}
+          <div className="space-y-0.5">
+            <h1 className="font-nunito text-2xl font-black text-white">{user.name}</h1>
+            {currentTeam && <p className="text-sm font-bold text-white/85">{currentTeam.name}</p>}
+            <p className="text-xs text-white/70">
+              {profile.location ? `${profile.location} · ` : ''}Member since {formatDate(user.createdAt)}
             </p>
           </div>
         </div>
+      </RnPageHeader>
 
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
         {/* Stats row */}
         <div className="flex gap-3">
           {profile.selfRating != null && (

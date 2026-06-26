@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { isTeamCaptain, canManageTournament } from '@/lib/permissions'
+import { RnPageHeader } from '@/components/rn/RnPageHeader'
 import { RnCard } from '@/components/rn/RnCard'
 import { RnTeamTile } from '@/components/rn/RnTeamTile'
+import { RnStatTile } from '@/components/rn/RnStatTile'
 import { EditTeamNameButton } from '@/app/(manage)/manage/[tournamentSlug]/teams/EditTeamNameButton'
 import { EditTeamAvatarButton } from '@/app/(manage)/manage/[tournamentSlug]/teams/EditTeamAvatarButton'
 
@@ -55,6 +57,13 @@ export default async function PublicTeamPage({ params }: Props) {
     ? (await isTeamCaptain(currentUser.id, team.id)) || (await canManageTournament(currentUser.id, team.tournamentId))
     : false
 
+  const standing = await prisma.standings.findFirst({
+    where: { teamId: team.id },
+    select: { position: true, matchesWon: true, matchesLost: true, points: true },
+  })
+
+  const captain = team.memberships.find((m) => m.role === 'CAPTAIN')?.player
+
   const allResults = [
     ...team.homeMatches.map((m) => ({
       opponent: m.awayTeam.name,
@@ -76,33 +85,43 @@ export default async function PublicTeamPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-paper font-nunito text-ink">
-      <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-3">
+      <RnPageHeader>
+        <div className="flex items-center gap-4">
           <RnTeamTile name={team.name} color={team.primaryColor} logoUrl={team.logoUrl} size="xl" />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-nunito text-2xl font-black text-ink">{team.name}</h1>
-              {canEdit && (
-                <div className="flex items-center gap-1.5">
-                  <EditTeamNameButton teamId={team.id} currentName={team.name} />
-                  <EditTeamAvatarButton
-                    teamId={team.id}
-                    teamName={team.name}
-                    currentLogoUrl={team.logoUrl ?? null}
-                    currentColor={team.primaryColor ?? null}
-                  />
-                </div>
-              )}
-            </div>
-            <Link href={`/tournaments/${team.tournament.slug}`} className="text-sm font-bold text-saffron transition-colors hover:text-saffron-300">
-              {team.tournament.name}
-            </Link>
-            {team.group && (
-              <p className="mt-0.5 text-xs text-rn-text-muted">{team.group.name}</p>
+            <h1 className="truncate font-nunito text-2xl font-black text-white">{team.name}</h1>
+            {captain && (
+              <p className="text-sm font-bold text-white/85">Captain: {captain.user.name}</p>
             )}
+            <Link href={`/tournaments/${team.tournament.slug}`} className="text-xs text-white/70 transition-colors hover:text-saffron">
+              {team.tournament.name}{team.group && ` · ${team.group.name}`}
+            </Link>
           </div>
         </div>
+      </RnPageHeader>
+
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
+        {canEdit && (
+          <RnCard className="flex items-center gap-3 p-3">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">Edit team</span>
+            <EditTeamNameButton teamId={team.id} currentName={team.name} />
+            <EditTeamAvatarButton
+              teamId={team.id}
+              teamName={team.name}
+              currentLogoUrl={team.logoUrl ?? null}
+              currentColor={team.primaryColor ?? null}
+            />
+          </RnCard>
+        )}
+
+        {/* Standing / record */}
+        {standing && (
+          <div className="flex gap-3">
+            <RnStatTile value={`${standing.matchesWon}–${standing.matchesLost}`} label="Record" />
+            <RnStatTile value={`#${standing.position}`} label="Rank" highlighted />
+            <RnStatTile value={standing.points} label="Points" />
+          </div>
+        )}
 
         {/* Roster */}
         <div className="space-y-2">

@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { canApproveRegistrations } from '@/lib/permissions'
-import { Badge } from '@/components/ui/badge'
-import { Avatar } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
+import { rnButtonVariants } from '@/components/rn/RnButton'
 import { formatDate } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { RegistrationActions } from './RegistrationActions'
 import { RemovePlayerButton } from './RemovePlayerButton'
 
@@ -48,36 +49,37 @@ export default async function RegistrationsPage({ params }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Registrations</h1>
-          <p className="text-sm text-text-secondary">{tournament.name}</p>
+          <h1 className="font-nunito text-xl font-black text-ink">Registrations</h1>
+          <p className="text-sm text-rn-text-secondary">{tournament.name}</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-xs font-medium ${byStatus.APPROVED.length > tournament.maxPlayers ? 'text-red-400' : 'text-text-muted'}`}>
+          <span className={cn('text-xs font-bold', byStatus.APPROVED.length > tournament.maxPlayers ? 'text-red-down' : 'text-rn-text-muted')}>
             {byStatus.APPROVED.length} / {tournament.maxPlayers} approved
           </span>
-          <Link href={`/manage/${tournamentSlug}/registrations/import`}>
-            <Button size="sm" variant="ghost" className="text-xs gap-1.5 border border-border hover:border-brand-500/50">
-              Import from Excel
-            </Button>
+          <Link
+            href={`/manage/${tournamentSlug}/registrations/import`}
+            className={rnButtonVariants({ variant: 'secondary', size: 'sm' })}
+          >
+            Import from Excel
           </Link>
         </div>
       </div>
 
       {/* Over-capacity alert */}
       {byStatus.APPROVED.length > tournament.maxPlayers && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
-          <span className="text-red-400 text-base leading-none mt-0.5">⚠</span>
+        <RnCard className="flex items-start gap-3 border-red-down/30 bg-red-down/10 px-4 py-3">
+          <span className="mt-0.5 text-base leading-none text-red-down">⚠</span>
           <div>
-            <p className="text-sm font-semibold text-red-400">Over capacity</p>
-            <p className="text-xs text-red-300/80 mt-0.5">
+            <p className="text-sm font-extrabold text-red-down">Over capacity</p>
+            <p className="mt-0.5 text-xs text-red-down/80">
               {byStatus.APPROVED.length} players approved but the tournament limit is {tournament.maxPlayers}.
               Move {byStatus.APPROVED.length - tournament.maxPlayers} player{byStatus.APPROVED.length - tournament.maxPlayers > 1 ? 's' : ''} to the waitlist.
             </p>
           </div>
-        </div>
+        </RnCard>
       )}
 
       {/* Pending */}
@@ -117,9 +119,9 @@ export default async function RegistrationsPage({ params }: Props) {
       )}
 
       {registrations.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <p className="text-text-muted text-sm">No registrations yet.</p>
-        </div>
+        <RnCard className="border-dashed p-8 text-center">
+          <p className="text-sm text-rn-text-muted">No registrations yet.</p>
+        </RnCard>
       )}
     </div>
   )
@@ -128,7 +130,7 @@ export default async function RegistrationsPage({ params }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">{title}</p>
+      <p className="text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">{title}</p>
       {children}
     </div>
   )
@@ -140,11 +142,11 @@ type RegWithPlayer = Awaited<
   player: { user: { name: string; email: string; avatarUrl: string | null } }
 }
 
-const STATUS_BADGE: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
-  APPLIED: 'info',
-  APPROVED: 'success',
-  WAITLISTED: 'warning',
-  REJECTED: 'error',
+const STATUS_STYLE: Record<string, string> = {
+  APPLIED: 'bg-rn-blue/10 text-rn-blue',
+  APPROVED: 'bg-rn-green/10 text-rn-green',
+  WAITLISTED: 'bg-rn-yellow/20 text-ink',
+  REJECTED: 'bg-red-down/10 text-red-down',
 }
 
 function RegistrationRow({
@@ -161,21 +163,21 @@ function RegistrationRow({
   showRemove?: boolean
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-raised p-3">
-      <Avatar src={reg.player.user.avatarUrl} name={reg.player.user.name} size="sm" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-text-primary truncate">{reg.player.user.name}</p>
-        <p className="text-xs text-text-muted">{formatDate(reg.appliedAt)}</p>
+    <RnCard className="flex items-center gap-3 p-3">
+      <RnTeamTile name={reg.player.user.name} logoUrl={reg.player.user.avatarUrl} color="#19A463" size="sm" className="rounded-full" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-ink">{reg.player.user.name}</p>
+        <p className="text-xs text-rn-text-muted">{formatDate(reg.appliedAt)}</p>
       </div>
-      <Badge variant={STATUS_BADGE[reg.status] ?? 'default'} dot>
+      <span className={cn('shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide', STATUS_STYLE[reg.status] ?? 'bg-rn-text-muted/10 text-rn-text-muted')}>
         {reg.status}
-      </Badge>
+      </span>
       {showActions && <RegistrationActions registrationId={reg.id} />}
       {showApprove && <RegistrationActions registrationId={reg.id} approveOnly />}
       {showWaitlist && <RegistrationActions registrationId={reg.id} waitlistOnly />}
       {showRemove && (
         <RemovePlayerButton registrationId={reg.id} playerName={reg.player.user.name} />
       )}
-    </div>
+    </RnCard>
   )
 }

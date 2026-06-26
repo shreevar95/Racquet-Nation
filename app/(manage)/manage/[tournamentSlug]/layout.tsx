@@ -3,36 +3,24 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { canManageTournament, isTournamentCaptain } from '@/lib/permissions'
-import { Badge } from '@/components/ui/badge'
+import { RnPageHeader } from '@/components/rn/RnPageHeader'
 import { formatDateRange } from '@/lib/utils'
+import { ManageTabs } from './ManageTabs'
 
 interface Props {
   children: React.ReactNode
   params: Promise<{ tournamentSlug: string }>
 }
 
-const STATUS_VARIANT: Record<string, 'default' | 'info' | 'success' | 'brand' | 'warning'> = {
-  DRAFT: 'default',
-  REGISTRATION_OPEN: 'success',
-  REGISTRATION_CLOSED: 'warning',
-  ACTIVE: 'brand',
-  COMPLETED: 'success',
-  ARCHIVED: 'default',
+const STATUS_STYLE: Record<string, string> = {
+  DRAFT: 'bg-white/15 text-white/80',
+  REGISTRATION_OPEN: 'bg-rn-green-soft/20 text-rn-green-soft',
+  REGISTRATION_CLOSED: 'bg-rn-yellow/25 text-rn-yellow',
+  ACTIVE: 'bg-saffron/25 text-saffron-300',
+  COMPLETED: 'bg-rn-green-soft/20 text-rn-green-soft',
+  CANCELLED: 'bg-rn-yellow/25 text-rn-yellow',
+  ARCHIVED: 'bg-white/15 text-white/80',
 }
-
-const ADMIN_TABS = [
-  { href: '', label: 'Overview' },
-  { href: '/registrations', label: 'Registrations' },
-  { href: '/teams', label: 'Teams' },
-  { href: '/schedule', label: 'Schedule' },
-  { href: '/lineups', label: 'Lineups' },
-  { href: '/scoring', label: 'Scoring' },
-  { href: '/settings', label: 'Settings' },
-]
-
-const CAPTAIN_TABS = [
-  { href: '/teams', label: 'My Team' },
-]
 
 export default async function ManageTournamentLayout({ children, params }: Props) {
   const { tournamentSlug } = await params
@@ -57,55 +45,41 @@ export default async function ManageTournamentLayout({ children, params }: Props
   const isCaptain = !isAdmin && (await isTournamentCaptain(user.id, tournament.id))
   if (!isAdmin && !isCaptain) notFound()
 
-  const base = `/manage/${tournamentSlug}`
-
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Manage header */}
-      <div className="bg-surface-raised border-b border-border">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-5 pb-0">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="space-y-1 min-w-0">
-              <h1 className="font-display font-black text-xl sm:text-2xl uppercase text-text-primary leading-tight truncate">
-                {tournament.name}
-              </h1>
-              <p className="text-xs text-text-secondary">
-                {tournament.sport.name} · {formatDateRange(tournament.startDate, tournament.endDate)} · {tournament.venue}
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0 mt-1">
-              <Link
-                href={`/tournaments/${tournamentSlug}`}
-                target="_blank"
-                className="text-xs text-text-muted hover:text-brand-400 transition-colors"
-              >
-                Public page ↗
-              </Link>
-              <Badge variant={STATUS_VARIANT[tournament.status] ?? 'default'} dot>
-                {tournament.status.replace(/_/g, ' ')}
-              </Badge>
-            </div>
+    <div className="flex min-h-screen flex-col bg-paper font-nunito text-ink">
+      <RnPageHeader>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="truncate font-nunito text-xl font-black uppercase leading-tight tracking-tight text-white">
+              {tournament.name}
+            </h1>
+            <p className="mt-0.5 truncate text-xs text-white/75">
+              {tournament.sport.name} · {formatDateRange(tournament.startDate, tournament.endDate)} · {tournament.venue}
+            </p>
           </div>
-
-          {/* Tabs */}
-          <nav className="scroll-x-tabs -mx-4 px-4 border-b border-border/50">
-            {(isAdmin ? ADMIN_TABS : CAPTAIN_TABS).map((tab) => (
-              <Link
-                key={tab.href}
-                href={`${base}${tab.href}`}
-                className="shrink-0 pb-3 px-1 mx-2 text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap border-b-2 border-transparent hover:border-brand-500/50 first:ml-0"
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${STATUS_STYLE[tournament.status] ?? 'bg-white/15 text-white/80'}`}
+            >
+              {tournament.status.replace(/_/g, ' ')}
+            </span>
+            <Link
+              href={`/tournaments/${tournamentSlug}`}
+              target="_blank"
+              className="text-xs text-white/70 transition-colors hover:text-saffron"
+            >
+              Public page ↗
+            </Link>
+          </div>
         </div>
+      </RnPageHeader>
+
+      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
+        <ManageTabs tournamentSlug={tournamentSlug} isAdmin={isAdmin} />
       </div>
 
       {/* Content */}
-      <div className="flex-1 mx-auto w-full max-w-4xl px-4 sm:px-6 py-6">
-        {children}
-      </div>
+      <div className="mx-auto w-full max-w-4xl flex-1 px-4 pb-6 sm:px-6">{children}</div>
     </div>
   )
 }

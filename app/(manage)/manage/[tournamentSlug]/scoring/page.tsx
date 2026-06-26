@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { canEnterScores } from '@/lib/permissions'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { RnCard } from '@/components/rn/RnCard'
+import { rnButtonVariants } from '@/components/rn/RnButton'
 import { formatDate, formatTime, formatScore } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Swords, ArrowLeft } from 'lucide-react'
 
 interface Props {
@@ -40,17 +41,17 @@ export default async function ScoringPage({ params }: Props) {
   const completed = matches.filter((m) => m.status === 'COMPLETED')
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-6">
       <div>
         <Link
           href={`/manage/${tournamentSlug}`}
-          className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-brand-400 transition-colors mb-2"
+          className="mb-2 inline-flex items-center gap-1 text-xs text-rn-text-muted transition-colors hover:text-saffron"
         >
           <ArrowLeft size={12} />
           Back to overview
         </Link>
-        <h1 className="text-xl font-bold text-text-primary">Scoring</h1>
-        <p className="text-sm text-text-secondary">{tournament.name}</p>
+        <h1 className="font-nunito text-xl font-black text-ink">Scoring</h1>
+        <p className="text-sm text-rn-text-secondary">{tournament.name}</p>
       </div>
 
       {active.length > 0 && (
@@ -78,9 +79,9 @@ export default async function ScoringPage({ params }: Props) {
       )}
 
       {matches.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <p className="text-text-muted text-sm">No matches scheduled yet.</p>
-        </div>
+        <RnCard className="border-dashed p-8 text-center">
+          <p className="text-sm text-rn-text-muted">No matches scheduled yet.</p>
+        </RnCard>
       )}
     </div>
   )
@@ -98,10 +99,10 @@ function Section({
   return (
     <div className="space-y-2">
       <p
-        className={[
-          'text-xs font-semibold uppercase tracking-wider',
-          highlight ? 'text-brand-400' : 'text-text-muted',
-        ].join(' ')}
+        className={cn(
+          'text-xs font-extrabold uppercase tracking-wider',
+          highlight ? 'text-saffron' : 'text-rn-text-muted',
+        )}
       >
         {title}
       </p>
@@ -115,13 +116,13 @@ type MatchType = Awaited<ReturnType<typeof prisma.match.findMany>>[number] & {
   awayTeam: { name: string }
 }
 
-const STATUS_BADGE: Record<string, 'default' | 'info' | 'brand' | 'warning' | 'success'> = {
-  UPCOMING: 'default',
-  OPEN_FOR_SUBMISSION: 'info',
-  LOCKED: 'brand',
-  IN_PROGRESS: 'brand',
-  TIEBREAK_REQUIRED: 'warning',
-  COMPLETED: 'success',
+const STATUS_STYLE: Record<string, string> = {
+  UPCOMING: 'bg-rn-text-muted/10 text-rn-text-muted',
+  OPEN_FOR_SUBMISSION: 'bg-rn-blue/10 text-rn-blue',
+  LOCKED: 'bg-saffron-tint text-saffron',
+  IN_PROGRESS: 'bg-saffron-tint text-saffron',
+  TIEBREAK_REQUIRED: 'bg-rn-yellow/20 text-ink',
+  COMPLETED: 'bg-rn-green/10 text-rn-green',
 }
 
 function MatchRow({
@@ -134,35 +135,42 @@ function MatchRow({
   completed?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-border bg-surface-raised p-3 gap-3">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-text-primary truncate">
+    <RnCard className="flex items-center justify-between gap-3 p-3">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-ink">
           {match.homeTeam.name} vs {match.awayTeam.name}
         </p>
         {match.scheduledAt ? (
-          <p className="text-xs text-text-muted">
+          <p className="text-xs text-rn-text-muted">
             {formatDate(match.scheduledAt)} {formatTime(match.scheduledAt)}
           </p>
         ) : (
-          <p className="text-xs text-text-muted">No time set</p>
+          <p className="text-xs text-rn-text-muted">No time set</p>
         )}
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex shrink-0 items-center gap-2">
         {completed && match.homeTeamScore !== null && match.awayTeamScore !== null && (
-          <span className="text-sm font-bold text-text-primary">
+          <span className="font-nunito text-sm font-black text-ink">
             {formatScore(match.homeTeamScore, match.awayTeamScore)}
           </span>
         )}
-        <Badge variant={STATUS_BADGE[match.status] ?? 'default'}>
+        <span className={cn('rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide', STATUS_STYLE[match.status] ?? 'bg-rn-text-muted/10 text-rn-text-muted')}>
           {match.status.replace(/_/g, ' ')}
-        </Badge>
-        <Link href={`/manage/${tournamentSlug}/scoring/${match.id}`}>
-          <Button size="icon-sm" variant={completed ? 'outline' : match.status === 'LOCKED' ? 'default' : 'outline'}>
-            <Swords size={14} />
-          </Button>
+        </span>
+        <Link
+          href={`/manage/${tournamentSlug}/scoring/${match.id}`}
+          className={cn(
+            rnButtonVariants({
+              variant: completed || match.status !== 'LOCKED' ? 'secondary' : 'primary',
+              size: 'sm',
+            }),
+            'h-9 w-9 p-0',
+          )}
+        >
+          <Swords size={14} />
         </Link>
       </div>
-    </div>
+    </RnCard>
   )
 }

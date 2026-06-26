@@ -3,7 +3,8 @@
 import { useTransition } from 'react'
 import { toast } from 'sonner'
 import { Unlock } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { rnButtonVariants } from '@/components/rn/RnButton'
+import { cn } from '@/lib/utils'
 import { openAllMatchesForLineup } from '@/actions/lineup'
 
 interface Props {
@@ -28,8 +29,8 @@ export function OpenAllButton({ tournamentId, upcomingCount }: Props) {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleOpen} loading={isPending}>
-      <Unlock size={14} /> Open All for Submission
-    </Button>
+    <button type="button" onClick={handleOpen} disabled={isPending} className={cn(rnButtonVariants({ variant: 'secondary', size: 'sm' }))}>
+      <Unlock size={14} /> {isPending ? 'Opening…' : 'Open All for Submission'}
+    </button>
   )
 }

@@ -241,14 +241,14 @@ function SectionHeader({ label }: { label: string }) {
   )
 }
 
-function nextPowerOfTwo(n: number): number {
+export function nextPowerOfTwo(n: number): number {
   if (n <= 1) return 2
   let p = 2
   while (p < n) p *= 2
   return p
 }
 
-function buildBracketRounds(size: number): string[] {
+export function buildBracketRounds(size: number): string[] {
   const rounds: string[] = []
   let s = size
   while (s >= 2) {

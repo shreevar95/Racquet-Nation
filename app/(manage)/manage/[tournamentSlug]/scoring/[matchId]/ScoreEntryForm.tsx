@@ -4,7 +4,8 @@ import { useState, useTransition, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Minus, Plus, ArrowLeft, Check, AlertTriangle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { rnButtonVariants } from '@/components/rn/RnButton'
+import { cn } from '@/lib/utils'
 import { enterMatchScores, savePartialScores, getMatchScores } from '@/actions/score'
 
 interface Team { id: string; name: string }
@@ -90,10 +91,10 @@ function ScoreInput({
         setRaw(String(clamped))
         onChange(clamped)
       }}
-      className={[
-        'text-4xl font-black w-16 text-center tabular-nums bg-transparent border-b-2 outline-none transition-colors',
-        invalid ? 'text-error border-error/60' : winner ? 'text-success border-success/40' : 'text-text-primary border-border focus:border-brand-500',
-      ].join(' ')}
+      className={cn(
+        'w-16 border-b-2 bg-transparent text-center text-4xl font-black tabular-nums outline-none transition-colors',
+        invalid ? 'border-red-down/60 text-red-down' : winner ? 'border-rn-green/40 text-rn-green' : 'border-rn-border text-ink focus:border-saffron',
+      )}
     />
   )
 }
@@ -234,57 +235,57 @@ export function ScoreEntryForm({
   }
 
   return (
-    <div className="fixed inset-0 bg-surface flex flex-col z-[60]">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-paper font-nunito text-ink">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-rn-border px-4">
         <button
           onClick={() => router.push(`/manage/${tournamentSlug}/scoring`)}
-          className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary transition-colors"
+          className="flex items-center gap-1.5 text-rn-text-secondary transition-colors hover:text-ink"
         >
           <ArrowLeft size={18} />
           <span className="text-sm">Back</span>
         </button>
         <div className="text-center">
-          <p className="text-xs text-text-muted">Match Score</p>
-          <p className="text-sm font-bold text-text-primary">
-            {homeTeam.name} <span className="text-brand-500">{homeWins}</span>
+          <p className="text-xs text-rn-text-muted">Match Score</p>
+          <p className="text-sm font-bold text-ink">
+            {homeTeam.name} <span className="text-saffron">{homeWins}</span>
             {' – '}
-            <span className="text-brand-500">{awayWins}</span> {awayTeam.name}
+            <span className="text-saffron">{awayWins}</span> {awayTeam.name}
           </p>
         </div>
         <div className="w-16 text-right">
-          {saveStatus === 'saving' && <span className="text-[10px] text-text-muted">Saving…</span>}
-          {saveStatus === 'saved' && <span className="text-[10px] text-success">Saved</span>}
-          {saveStatus === 'error' && <span className="text-[10px] text-error">Error</span>}
+          {saveStatus === 'saving' && <span className="text-[10px] text-rn-text-muted">Saving…</span>}
+          {saveStatus === 'saved' && <span className="text-[10px] text-rn-green">Saved</span>}
+          {saveStatus === 'error' && <span className="text-[10px] text-red-down">Error</span>}
         </div>
       </div>
 
       {/* Score rows */}
       <div className="flex-1 overflow-y-auto">
         {hasTiebreakGame && (
-          <div className="bg-warning-bg border-b border-warning/20 px-4 py-2 text-center">
-            <p className="text-warning text-xs font-medium">
+          <div className="border-b border-rn-yellow/20 bg-rn-yellow/15 px-4 py-2 text-center">
+            <p className="text-xs font-bold text-ink">
               Tied {homeWins}–{awayWins} — enter tiebreak game below
             </p>
           </div>
         )}
 
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-rn-border">
           {scores.map((game, i) => {
             const isTiebreakGame = i === gamesPerMatch
             const winner = gameWinner(game.homeScore, game.awayScore, pointsToWin)
             const impossible = isImpossibleScore(game.homeScore, game.awayScore, pointsToWin)
             return (
-              <div key={game.gameNumber} className={['px-4 py-5', isTiebreakGame ? 'bg-warning-bg/30' : ''].join(' ')}>
-                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4 text-center">
+              <div key={game.gameNumber} className={cn('px-4 py-5', isTiebreakGame && 'bg-rn-yellow/10')}>
+                <p className="mb-4 text-center text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">
                   {isTiebreakGame ? '⚡ Tiebreak Game' : `Game ${game.gameNumber}`}
                   {winner && !impossible && (
-                    <span className="text-success ml-2">
+                    <span className="ml-2 text-rn-green">
                       — {winner === 'home' ? homeTeam.name : awayTeam.name} wins
                     </span>
                   )}
                   {impossible && (
-                    <span className="text-error ml-2 inline-flex items-center gap-1">
+                    <span className="ml-2 inline-flex items-center gap-1 text-red-down">
                       <AlertTriangle size={12} />
                       impossible score
                     </span>
@@ -293,13 +294,13 @@ export function ScoreEntryForm({
 
                 <div className="flex items-center justify-between gap-4">
                   {/* Home team */}
-                  <div className="flex-1 flex flex-col items-center gap-3">
-                    <p className="text-xs text-text-secondary text-center truncate w-full">{homeTeam.name}</p>
+                  <div className="flex flex-1 flex-col items-center gap-3">
+                    <p className="w-full truncate text-center text-xs text-rn-text-secondary">{homeTeam.name}</p>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => adjust(i, 'home', -1)}
-                        className="h-10 w-10 rounded-full border-2 border-border flex items-center justify-center text-text-secondary hover:border-brand-500 hover:text-brand-400 active:scale-95 transition-all"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-rn-border text-rn-text-secondary transition-all hover:border-saffron hover:text-saffron active:scale-95"
                       >
                         <Minus size={16} />
                       </button>
@@ -312,23 +313,23 @@ export function ScoreEntryForm({
                       <button
                         type="button"
                         onClick={() => adjust(i, 'home', 1)}
-                        className="h-10 w-10 rounded-full border-2 border-border flex items-center justify-center text-text-secondary hover:border-brand-500 hover:text-brand-400 active:scale-95 transition-all"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-rn-border text-rn-text-secondary transition-all hover:border-saffron hover:text-saffron active:scale-95"
                       >
                         <Plus size={16} />
                       </button>
                     </div>
                   </div>
 
-                  <span className="text-text-muted font-light text-xl self-end pb-2">—</span>
+                  <span className="self-end pb-2 text-xl font-light text-rn-text-muted">—</span>
 
                   {/* Away team */}
-                  <div className="flex-1 flex flex-col items-center gap-3">
-                    <p className="text-xs text-text-secondary text-center truncate w-full">{awayTeam.name}</p>
+                  <div className="flex flex-1 flex-col items-center gap-3">
+                    <p className="w-full truncate text-center text-xs text-rn-text-secondary">{awayTeam.name}</p>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => adjust(i, 'away', -1)}
-                        className="h-10 w-10 rounded-full border-2 border-border flex items-center justify-center text-text-secondary hover:border-brand-500 hover:text-brand-400 active:scale-95 transition-all"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-rn-border text-rn-text-secondary transition-all hover:border-saffron hover:text-saffron active:scale-95"
                       >
                         <Minus size={16} />
                       </button>
@@ -341,7 +342,7 @@ export function ScoreEntryForm({
                       <button
                         type="button"
                         onClick={() => adjust(i, 'away', 1)}
-                        className="h-10 w-10 rounded-full border-2 border-border flex items-center justify-center text-text-secondary hover:border-brand-500 hover:text-brand-400 active:scale-95 transition-all"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-rn-border text-rn-text-secondary transition-all hover:border-saffron hover:text-saffron active:scale-95"
                       >
                         <Plus size={16} />
                       </button>
@@ -355,33 +356,32 @@ export function ScoreEntryForm({
       </div>
 
       {/* Bottom submit */}
-      <div className="px-4 py-3 border-t border-border pb-safe shrink-0 space-y-2">
+      <div className="shrink-0 space-y-2 border-t border-rn-border px-4 py-3 pb-safe">
         {anyImpossible && (
-          <p className="text-xs text-error text-center flex items-center justify-center gap-1">
+          <p className="flex items-center justify-center gap-1 text-center text-xs text-red-down">
             <AlertTriangle size={12} />
             Fix impossible score(s) — game to {pointsToWin}, win by 2
           </p>
         )}
         {!canSubmit && !anyImpossible && (
-          <p className="text-xs text-text-muted text-center">
+          <p className="text-center text-xs text-rn-text-muted">
             {scores.filter((g) => isGameComplete(g.homeScore, g.awayScore, pointsToWin)).length} / {gamesPerMatch} games complete
           </p>
         )}
         {hasDecisiveWinner && !allComplete && !anyImpossible && (
-          <p className="text-xs text-text-muted text-center">
+          <p className="text-center text-xs text-rn-text-muted">
             Match decided — {homeWins > awayWins ? homeTeam.name : awayTeam.name} wins {Math.max(homeWins, awayWins)}–{Math.min(homeWins, awayWins)}
           </p>
         )}
-        <Button
+        <button
+          type="button"
           onClick={handleSubmit}
-          loading={isPending}
-          disabled={!canSubmit}
-          className="w-full"
-          size="lg"
+          disabled={isPending || !canSubmit}
+          className={cn(rnButtonVariants({ variant: 'primary', size: 'lg' }), 'w-full')}
         >
           <Check size={18} />
-          {canSubmit ? 'Confirm Result' : 'Enter all game scores to submit'}
-        </Button>
+          {isPending ? 'Saving…' : canSubmit ? 'Confirm Result' : 'Enter all game scores to submit'}
+        </button>
       </div>
     </div>
   )

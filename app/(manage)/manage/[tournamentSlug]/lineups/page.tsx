@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { canManageTournament } from '@/lib/permissions'
-import { Badge } from '@/components/ui/badge'
+import { RnCard } from '@/components/rn/RnCard'
 import { formatDate, formatTime } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { LineupControls } from './LineupControls'
 import { OpenAllButton } from './OpenAllButton'
 
@@ -13,6 +14,12 @@ interface Props {
 }
 
 export const metadata: Metadata = { title: 'Lineups' }
+
+const STATUS_STYLE: Record<string, string> = {
+  LOCKED: 'bg-rn-yellow/20 text-ink',
+  OPEN_FOR_SUBMISSION: 'bg-rn-blue/10 text-rn-blue',
+  UPCOMING: 'bg-rn-text-muted/10 text-rn-text-muted',
+}
 
 export default async function LineupsPage({ params }: Props) {
   const { tournamentSlug } = await params
@@ -43,11 +50,11 @@ export default async function LineupsPage({ params }: Props) {
   if (!(await canManageTournament(user.id, tournament.id))) notFound()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Lineups</h1>
-          <p className="text-sm text-text-secondary">{tournament.name}</p>
+          <h1 className="font-nunito text-xl font-black text-ink">Lineups</h1>
+          <p className="text-sm text-rn-text-secondary">{tournament.name}</p>
         </div>
         <OpenAllButton
           tournamentId={tournament.id}
@@ -61,29 +68,21 @@ export default async function LineupsPage({ params }: Props) {
           const awayLineup = match.lineups.find((l) => l.teamId === match.awayTeamId)
 
           return (
-            <div key={match.id} className="rounded-lg border border-border bg-surface-raised p-4 space-y-3">
+            <RnCard key={match.id} className="space-y-3 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium text-text-primary">
+                  <p className="font-bold text-ink">
                     {match.homeTeam.name} vs {match.awayTeam.name}
                   </p>
                   {match.scheduledAt && (
-                    <p className="text-xs text-text-muted">
+                    <p className="text-xs text-rn-text-muted">
                       {formatDate(match.scheduledAt)} {formatTime(match.scheduledAt)}
                     </p>
                   )}
                 </div>
-                <Badge
-                  variant={
-                    match.status === 'LOCKED'
-                      ? 'warning'
-                      : match.status === 'OPEN_FOR_SUBMISSION'
-                        ? 'info'
-                        : 'default'
-                  }
-                >
+                <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide', STATUS_STYLE[match.status] ?? 'bg-rn-text-muted/10 text-rn-text-muted')}>
                   {match.status.replace(/_/g, ' ')}
-                </Badge>
+                </span>
               </div>
 
               {/* Lineup status per team */}
@@ -94,17 +93,17 @@ export default async function LineupsPage({ params }: Props) {
                 ].map(({ team, lineup }) => (
                   <div
                     key={team.name}
-                    className={[
-                      'rounded-md p-2 text-xs border',
+                    className={cn(
+                      'rounded-lg border p-2 text-xs',
                       lineup?.isLocked
-                        ? 'border-warning/30 bg-warning-bg'
+                        ? 'border-rn-yellow/40 bg-rn-yellow/15'
                         : lineup
-                          ? 'border-success/30 bg-success-bg'
-                          : 'border-border bg-surface',
-                    ].join(' ')}
+                          ? 'border-rn-green/30 bg-rn-green/10'
+                          : 'border-rn-border bg-paper',
+                    )}
                   >
-                    <p className="font-medium text-text-primary">{team.name}</p>
-                    <p className={lineup ? 'text-success' : 'text-text-muted'}>
+                    <p className="font-bold text-ink">{team.name}</p>
+                    <p className={lineup ? 'font-bold text-rn-green' : 'text-rn-text-muted'}>
                       {lineup?.isLocked
                         ? 'Locked'
                         : lineup
@@ -123,14 +122,14 @@ export default async function LineupsPage({ params }: Props) {
                 }
                 allLocked={match.lineups.every((l) => l.isLocked) && match.lineups.length === 2}
               />
-            </div>
+            </RnCard>
           )
         })}
 
         {tournament.matches.length === 0 && (
-          <div className="rounded-lg border border-dashed border-border p-8 text-center">
-            <p className="text-text-muted text-sm">No upcoming matches require lineup management.</p>
-          </div>
+          <RnCard className="border-dashed p-8 text-center">
+            <p className="text-sm text-rn-text-muted">No upcoming matches require lineup management.</p>
+          </RnCard>
         )}
       </div>
     </div>

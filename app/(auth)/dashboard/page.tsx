@@ -8,7 +8,7 @@ import { RnCard } from '@/components/rn/RnCard'
 import { RnTeamTile } from '@/components/rn/RnTeamTile'
 import { RnStatTile } from '@/components/rn/RnStatTile'
 import { rnButtonVariants } from '@/components/rn/RnButton'
-import { cn } from '@/lib/utils'
+import { cn, formatTime } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -267,41 +267,59 @@ export default async function DashboardPage() {
               </div>
             )}
 
-            {myStanding && groupStandings.length > 0 && (
-              <div>
-                <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[.14em] text-saffron">
-                  My Standings
-                </p>
-                <RnCard className="overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-rn-border px-4 py-2.5">
-                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">
-                      # · Team · {myStanding.group.name}
+            {myStanding && groupStandings.length > 0 && (() => {
+              const latestUpdate = new Date(
+                Math.max(...groupStandings.map((r) => new Date(r.lastUpdated).getTime())),
+              )
+              return (
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-[11px] font-extrabold uppercase tracking-[.14em] text-saffron">
+                      My Standings
                     </p>
-                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">Pts</p>
+                    <span className="text-[11px] text-rn-text-muted">Updated {formatTime(latestUpdate)}</span>
                   </div>
-                  <div className="divide-y divide-rn-border">
-                    {groupStandings.map((row) => (
-                      <div
-                        key={row.teamId}
-                        className={cn('flex items-center gap-3 px-4 py-3.5', row.teamId === myTeamId && 'bg-[#FFF1E7]')}
-                      >
-                        <span className="w-5 shrink-0 text-center font-nunito text-sm font-black text-saffron">
-                          {row.position}
-                        </span>
-                        <RnTeamTile name={row.team.name} color={row.team.primaryColor} logoUrl={row.team.logoUrl} size="sm" />
-                        <Link
-                          href={`/teams/${row.team.slug}`}
-                          className="flex-1 truncate text-sm font-extrabold text-ink transition-colors hover:text-saffron"
-                        >
-                          {row.team.name}
-                        </Link>
-                        <span className="shrink-0 font-nunito text-base font-black text-ink">{row.points}</span>
+                  <RnCard className="overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-rn-border px-4 py-2.5">
+                      <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">
+                        # · Team · {myStanding.group.name}
+                      </p>
+                      <div className="flex items-center gap-3 text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">
+                        <span className="hidden w-8 text-center sm:block">W</span>
+                        <span className="hidden w-8 text-center sm:block">L</span>
+                        <span className="w-12 text-center">MW</span>
+                        <span className="w-8 text-right">Pts</span>
                       </div>
-                    ))}
-                  </div>
-                </RnCard>
-              </div>
-            )}
+                    </div>
+                    <div className="divide-y divide-rn-border">
+                      {groupStandings.map((row) => (
+                        <div
+                          key={row.teamId}
+                          className={cn('flex items-center gap-3 px-4 py-3.5', row.teamId === myTeamId && 'bg-[#FFF1E7]')}
+                        >
+                          <span className="w-5 shrink-0 text-center font-nunito text-sm font-black text-saffron">
+                            {row.position}
+                          </span>
+                          <RnTeamTile name={row.team.name} color={row.team.primaryColor} logoUrl={row.team.logoUrl} size="sm" />
+                          <Link
+                            href={`/teams/${row.team.slug}`}
+                            className="flex-1 truncate text-sm font-extrabold text-ink transition-colors hover:text-saffron"
+                          >
+                            {row.team.name}
+                          </Link>
+                          <div className="flex shrink-0 items-center gap-3 text-sm">
+                            <span className="hidden w-8 text-center font-extrabold text-rn-green sm:block">{row.matchesWon}</span>
+                            <span className="hidden w-8 text-center font-extrabold text-red-down sm:block">{row.matchesLost}</span>
+                            <span className="w-12 text-center font-nunito text-ink">{row.gamesWon}</span>
+                            <span className="w-8 text-right font-nunito font-black text-ink">{row.points}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </RnCard>
+                </div>
+              )
+            })()}
 
             {dashboardTeamsAll.length > 0 && (
               <RnCard className="overflow-hidden">

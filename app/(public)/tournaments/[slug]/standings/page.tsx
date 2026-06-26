@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { formatTime } from '@/lib/utils'
 import { RnCard } from '@/components/rn/RnCard'
 import { RnTeamTile } from '@/components/rn/RnTeamTile'
 
@@ -57,17 +58,34 @@ export default async function StandingsPage({ params }: Props) {
     )
   }
 
+  const allStandingsRows = tournament.groups.flatMap((g) => g.standings)
+  const latestUpdate = allStandingsRows.length > 0
+    ? new Date(Math.max(...allStandingsRows.map((r) => new Date(r.lastUpdated).getTime())))
+    : null
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {tournament.groups.map((group) =>
-        group.standings.length > 0 ? (
-          <div key={group.id} className="space-y-2">
-            <RnCard className="overflow-hidden">
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-xs font-extrabold uppercase tracking-[.15em] text-saffron">Standings</p>
+        {latestUpdate && (
+          <span className="text-xs text-rn-text-muted">Updated {formatTime(latestUpdate)}</span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {tournament.groups.map((group) =>
+          group.standings.length > 0 ? (
+            <RnCard key={group.id} className="overflow-hidden">
               <div className="flex items-center justify-between border-b border-rn-border px-4 py-2.5">
                 <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">
                   # · Team · {group.name}
                 </p>
-                <p className="text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">Pts</p>
+                <div className="flex items-center gap-3 text-[11px] font-extrabold uppercase tracking-wider text-rn-text-muted">
+                  <span className="hidden w-8 text-center sm:block">W</span>
+                  <span className="hidden w-8 text-center sm:block">L</span>
+                  <span className="w-12 text-center">MW</span>
+                  <span className="w-8 text-right">Pts</span>
+                </div>
               </div>
               <div className="divide-y divide-rn-border">
                 {group.standings.map((row) => (
@@ -85,17 +103,19 @@ export default async function StandingsPage({ params }: Props) {
                     >
                       {row.team.name}
                     </Link>
-                    <span className="shrink-0 font-nunito text-base font-black text-ink">{row.points}</span>
+                    <div className="flex shrink-0 items-center gap-3 text-sm">
+                      <span className="hidden w-8 text-center font-extrabold text-rn-green sm:block">{row.matchesWon}</span>
+                      <span className="hidden w-8 text-center font-extrabold text-red-down sm:block">{row.matchesLost}</span>
+                      <span className="w-12 text-center font-nunito text-ink">{row.gamesWon}</span>
+                      <span className="w-8 text-right font-nunito font-black text-ink">{row.points}</span>
+                    </div>
                   </div>
                 ))}
               </div>
             </RnCard>
-            <p className="text-xs text-rn-text-muted">
-              Last updated {new Date(group.standings[0].lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
-        ) : null,
-      )}
+          ) : null,
+        )}
+      </div>
     </div>
   )
 }

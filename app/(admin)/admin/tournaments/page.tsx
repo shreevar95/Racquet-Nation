@@ -1,25 +1,23 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { RnCard } from '@/components/rn/RnCard'
+import { rnButtonVariants } from '@/components/rn/RnButton'
 import { formatDate } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Plus } from 'lucide-react'
 import { CancelledTournamentActions } from './CancelledTournamentActions'
 
 export const metadata: Metadata = { title: 'Tournaments' }
 
-const STATUS_VARIANTS: Record<
-  string,
-  'default' | 'brand' | 'success' | 'warning' | 'error' | 'info'
-> = {
-  DRAFT: 'default',
-  REGISTRATION_OPEN: 'success',
-  REGISTRATION_CLOSED: 'warning',
-  ACTIVE: 'brand',
-  COMPLETED: 'success',
-  ARCHIVED: 'default',
-  CANCELLED: 'error',
+const STATUS_STYLE: Record<string, string> = {
+  DRAFT: 'bg-rn-text-muted/10 text-rn-text-muted',
+  REGISTRATION_OPEN: 'bg-rn-green/10 text-rn-green',
+  REGISTRATION_CLOSED: 'bg-rn-yellow/20 text-ink',
+  ACTIVE: 'bg-saffron-tint text-saffron',
+  COMPLETED: 'bg-rn-green/10 text-rn-green',
+  ARCHIVED: 'bg-rn-text-muted/10 text-rn-text-muted',
+  CANCELLED: 'bg-red-down/10 text-red-down',
 }
 
 export default async function AdminTournamentsPage() {
@@ -35,47 +33,43 @@ export default async function AdminTournamentsPage() {
   const cancelled = tournaments.filter((t) => t.status === 'CANCELLED')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-nunito text-ink">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Tournaments</h1>
-        <Link href="/admin/tournaments/new">
-          <Button size="sm">
-            <Plus size={16} /> New Tournament
-          </Button>
+        <h1 className="text-2xl font-black text-ink">Tournaments</h1>
+        <Link href="/admin/tournaments/new" className={cn(rnButtonVariants({ variant: 'primary', size: 'sm' }))}>
+          <Plus size={16} /> New Tournament
         </Link>
       </div>
 
       {tournaments.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center">
-          <p className="text-text-muted">No tournaments yet.</p>
-          <Link href="/admin/tournaments/new" className="mt-3 inline-block">
-            <Button size="sm">Create your first tournament</Button>
+        <RnCard className="border-dashed p-12 text-center">
+          <p className="text-rn-text-muted">No tournaments yet.</p>
+          <Link href="/admin/tournaments/new" className={cn(rnButtonVariants({ variant: 'primary', size: 'sm' }), 'mt-3 inline-flex')}>
+            Create your first tournament
           </Link>
-        </div>
+        </RnCard>
       ) : (
         <>
           {/* Active tournaments */}
           <div className="space-y-2">
             {active.map((t) => (
-              <Link
-                key={t.id}
-                href={`/manage/${t.slug}`}
-                className="flex items-center justify-between rounded-lg border border-border bg-surface-raised p-4 hover:border-brand-500/40 transition-colors"
-              >
-                <div className="space-y-1 min-w-0">
-                  <p className="font-medium text-text-primary truncate">{t.name}</p>
-                  <p className="text-xs text-text-muted">
-                    {t.sport.name} · {formatDate(t.startDate)} – {formatDate(t.endDate)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0 ml-3">
-                  <span className="text-xs text-text-muted hidden sm:block">
-                    {t._count.registrations} regs · {t._count.teams} teams
-                  </span>
-                  <Badge variant={STATUS_VARIANTS[t.status] ?? 'default'}>
-                    {t.status.replace(/_/g, ' ')}
-                  </Badge>
-                </div>
+              <Link key={t.id} href={`/manage/${t.slug}`}>
+                <RnCard className="rn-card-hover flex items-center justify-between p-4">
+                  <div className="min-w-0 space-y-1">
+                    <p className="truncate font-bold text-ink">{t.name}</p>
+                    <p className="text-xs text-rn-text-muted">
+                      {t.sport.name} · {formatDate(t.startDate)} – {formatDate(t.endDate)}
+                    </p>
+                  </div>
+                  <div className="ml-3 flex shrink-0 items-center gap-3">
+                    <span className="hidden text-xs text-rn-text-muted sm:block">
+                      {t._count.registrations} regs · {t._count.teams} teams
+                    </span>
+                    <span className={cn('rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide', STATUS_STYLE[t.status] ?? 'bg-rn-text-muted/10 text-rn-text-muted')}>
+                      {t.status.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                </RnCard>
               </Link>
             ))}
           </div>
@@ -83,29 +77,28 @@ export default async function AdminTournamentsPage() {
           {/* Cancelled tournaments */}
           {cancelled.length > 0 && (
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">
                 Cancelled
               </p>
               <div className="space-y-2">
                 {cancelled.map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between rounded-lg border border-border bg-surface-raised p-4 opacity-70"
-                  >
-                    <div className="space-y-1 min-w-0">
-                      <p className="font-medium text-text-secondary truncate">{t.name}</p>
-                      <p className="text-xs text-text-muted">
+                  <RnCard key={t.id} className="flex items-center justify-between p-4 opacity-70">
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate font-bold text-rn-text-secondary">{t.name}</p>
+                      <p className="text-xs text-rn-text-muted">
                         {t.sport.name} · {formatDate(t.startDate)} – {formatDate(t.endDate)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-3">
+                    <div className="ml-3 flex shrink-0 items-center gap-3">
                       <CancelledTournamentActions
                         tournamentId={t.id}
                         tournamentName={t.name}
                       />
-                      <Badge variant="error">Cancelled</Badge>
+                      <span className="rounded-full bg-red-down/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-red-down">
+                        Cancelled
+                      </span>
                     </div>
-                  </div>
+                  </RnCard>
                 ))}
               </div>
             </div>

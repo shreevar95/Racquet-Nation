@@ -35,7 +35,7 @@ export function CancelTournamentButton({ tournamentId, tournamentName }: Props) 
     <button
       onClick={handleCancel}
       disabled={isPending}
-      className="text-xs text-red-500 hover:text-red-400 transition-colors disabled:opacity-50"
+      className="text-xs font-bold text-red-down transition-colors hover:text-red-down/80 disabled:opacity-50"
     >
       {isPending ? 'Cancelling…' : 'Cancel tournament'}
     </button>

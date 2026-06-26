@@ -8,9 +8,9 @@ interface Props {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between py-2 border-b border-border/50 last:border-0 gap-4">
-      <span className="text-sm text-text-muted shrink-0">{label}</span>
-      <span className="text-sm text-text-primary text-right">{value}</span>
+    <div className="flex items-start justify-between gap-4 border-b border-rn-border py-2 last:border-0">
+      <span className="shrink-0 text-sm text-rn-text-muted">{label}</span>
+      <span className="text-right text-sm font-bold text-ink">{value}</span>
     </div>
   )
 }
@@ -19,7 +19,7 @@ export function Step6Review({ data, mode = 'create' }: Props) {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+        <p className="mb-2 text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">
           Basics
         </p>
         <Row label="Name" value={data.name || '—'} />
@@ -35,7 +35,7 @@ export function Step6Review({ data, mode = 'create' }: Props) {
       </div>
 
       <div className="space-y-1">
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+        <p className="mb-2 text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">
           Structure
         </p>
         <Row label="Teams" value={data.numTeams} />
@@ -45,7 +45,7 @@ export function Step6Review({ data, mode = 'create' }: Props) {
       </div>
 
       <div className="space-y-1">
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+        <p className="mb-2 text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">
           Format
         </p>
         <Row label="Match type" value={data.matchFormat.matchType.replace('_', ' ')} />
@@ -61,7 +61,7 @@ export function Step6Review({ data, mode = 'create' }: Props) {
       </div>
 
       <div className="space-y-1">
-        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+        <p className="mb-2 text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">
           Standings
         </p>
         <Row label="Points W/D/L" value={`${data.standingsConfig.pointsForWin} / ${data.standingsConfig.pointsForDraw} / ${data.standingsConfig.pointsForLoss}`} />
@@ -74,8 +74,8 @@ export function Step6Review({ data, mode = 'create' }: Props) {
         />
       </div>
 
-      <div className="rounded-lg border border-brand-500/30 bg-brand-500/5 p-4">
-        <p className="text-sm text-brand-400 font-medium">
+      <div className="rounded-lg border border-saffron/30 bg-saffron-tint p-4">
+        <p className="text-sm font-bold text-saffron">
           {mode === 'edit'
             ? 'Review your changes — click Save Changes to apply them.'
             : 'Review everything above — you can edit settings after creation from the tournament management dashboard.'}

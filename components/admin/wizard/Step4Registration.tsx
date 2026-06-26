@@ -1,6 +1,8 @@
 'use client'
 
 import type { CreateTournamentInput } from '@/types/tournament'
+import { rnFieldClassName, rnLabelClassName } from './rnWizardStyles'
+import { RnToggle } from '@/components/rn/RnToggle'
 
 interface Props {
   data: CreateTournamentInput
@@ -30,27 +32,22 @@ export function Step4Registration({ data, update }: Props) {
   return (
     <div className="space-y-5">
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-text-primary">Required Fields</p>
-        <p className="text-xs text-text-muted">
+        <p className="text-sm font-bold text-ink">Required Fields</p>
+        <p className="text-xs text-rn-text-muted">
           These fields will be mandatory on the player registration form.
         </p>
         {TOGGLES.map(({ key, label }) => (
-          <label key={key} className="flex items-center justify-between cursor-pointer py-2 border-b border-border last:border-0">
-            <span className="text-sm text-text-secondary">{label}</span>
-            <input
-              type="checkbox"
-              checked={registrationConfig[key]}
-              onChange={() => toggle(key)}
-              className="w-4 h-4 rounded border-border accent-brand-500"
-            />
-          </label>
+          <div key={key} className="flex items-center justify-between border-b border-rn-border py-2 last:border-0">
+            <span className="text-sm text-rn-text-secondary">{label}</span>
+            <RnToggle checked={registrationConfig[key]} onChange={() => toggle(key)} />
+          </div>
         ))}
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-semibold text-text-primary">Registration Capacity</p>
+        <p className="text-sm font-bold text-ink">Registration Capacity</p>
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary">
+          <label className={rnLabelClassName}>
             Max registrations (leave blank for unlimited)
           </label>
           <input
@@ -66,13 +63,13 @@ export function Step4Registration({ data, update }: Props) {
               })
             }
             placeholder={`${data.numTeams * data.playersPerTeam}`}
-            className="h-10 w-40 rounded-md border border-border bg-surface-raised px-3 text-sm text-text-primary focus:border-brand-500 focus:outline-none"
+            className={`${rnFieldClassName} w-40`}
           />
         </div>
       </div>
 
-      <div className="rounded-lg bg-surface border border-dashed border-border/50 p-4 text-center">
-        <p className="text-sm text-text-muted">
+      <div className="rounded-lg border border-dashed border-rn-border bg-paper p-4 text-center">
+        <p className="text-sm text-rn-text-muted">
           Custom registration fields coming soon.
         </p>
       </div>

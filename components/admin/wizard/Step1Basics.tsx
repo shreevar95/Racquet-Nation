@@ -1,7 +1,8 @@
 'use client'
 
-import { Input } from '@/components/ui/input'
 import type { CreateTournamentInput } from '@/types/tournament'
+import { rnFieldClassName, rnLabelClassName } from './rnWizardStyles'
+import { cn } from '@/lib/utils'
 
 interface Props {
   data: CreateTournamentInput
@@ -31,20 +32,23 @@ const VISIBILITY_OPTIONS = [
 export function Step1Basics({ data, update, sports }: Props) {
   return (
     <div className="space-y-4">
-      <Input
-        label="Tournament Name"
-        value={data.name}
-        onChange={(e) => update({ name: e.target.value })}
-        placeholder="Monsoon Pickleball League 2027"
-        required
-      />
+      <div className="flex flex-col gap-1.5">
+        <label className={rnLabelClassName}>Tournament Name</label>
+        <input
+          value={data.name}
+          onChange={(e) => update({ name: e.target.value })}
+          placeholder="Monsoon Pickleball League 2027"
+          required
+          className={rnFieldClassName}
+        />
+      </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-text-secondary">Sport</label>
+        <label className={rnLabelClassName}>Sport</label>
         <select
           value={data.sportId}
           onChange={(e) => update({ sportId: e.target.value })}
-          className="h-10 rounded-md border border-border bg-surface-raised px-3 text-sm text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className={rnFieldClassName}
         >
           <option value="">Select a sport...</option>
           {sports.map((s) => (
@@ -57,73 +61,91 @@ export function Step1Basics({ data, update, sports }: Props) {
 
       {/* Dates + Times */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input
-          label="Start Date"
-          type="date"
-          value={data.startDate}
-          onChange={(e) => update({ startDate: e.target.value })}
+        <div className="flex flex-col gap-1.5">
+          <label className={rnLabelClassName}>Start Date</label>
+          <input
+            type="date"
+            value={data.startDate}
+            onChange={(e) => update({ startDate: e.target.value })}
+            required
+            className={rnFieldClassName}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className={rnLabelClassName}>Start Time (optional)</label>
+          <input
+            type="time"
+            value={data.startTime ?? ''}
+            onChange={(e) => update({ startTime: e.target.value || null })}
+            className={rnFieldClassName}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className={rnLabelClassName}>End Date</label>
+          <input
+            type="date"
+            value={data.endDate}
+            onChange={(e) => update({ endDate: e.target.value })}
+            required
+            className={rnFieldClassName}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className={rnLabelClassName}>End Time (optional)</label>
+          <input
+            type="time"
+            value={data.endTime ?? ''}
+            onChange={(e) => update({ endTime: e.target.value || null })}
+            className={rnFieldClassName}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className={rnLabelClassName}>Venue</label>
+        <input
+          value={data.venue}
+          onChange={(e) => update({ venue: e.target.value })}
+          placeholder="DLF Sports Club, Gurugram"
           required
-        />
-        <Input
-          label="Start Time (optional)"
-          type="time"
-          value={data.startTime ?? ''}
-          onChange={(e) => update({ startTime: e.target.value || null })}
-        />
-        <Input
-          label="End Date"
-          type="date"
-          value={data.endDate}
-          onChange={(e) => update({ endDate: e.target.value })}
-          required
-        />
-        <Input
-          label="End Time (optional)"
-          type="time"
-          value={data.endTime ?? ''}
-          onChange={(e) => update({ endTime: e.target.value || null })}
+          className={rnFieldClassName}
         />
       </div>
 
-      <Input
-        label="Venue"
-        value={data.venue}
-        onChange={(e) => update({ venue: e.target.value })}
-        placeholder="DLF Sports Club, Gurugram"
-        required
-      />
-
-      <Input
-        label="Venue Address (optional)"
-        value={data.venueAddress ?? ''}
-        onChange={(e) => update({ venueAddress: e.target.value || null })}
-        placeholder="Sector 42, DLF City Phase III, Gurugram 122002"
-      />
+      <div className="flex flex-col gap-1.5">
+        <label className={rnLabelClassName}>Venue Address (optional)</label>
+        <input
+          value={data.venueAddress ?? ''}
+          onChange={(e) => update({ venueAddress: e.target.value || null })}
+          placeholder="Sector 42, DLF City Phase III, Gurugram 122002"
+          className={rnFieldClassName}
+        />
+      </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-text-secondary">Description (optional)</label>
+        <label className={rnLabelClassName}>Description (optional)</label>
         <textarea
           value={data.description ?? ''}
           onChange={(e) => update({ description: e.target.value || null })}
           rows={3}
           placeholder="Describe the tournament format, eligibility, prizes..."
-          className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-none"
+          className={cn(rnFieldClassName, 'h-auto resize-none py-2')}
         />
       </div>
 
       {/* Visibility */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-text-secondary">Visibility</label>
+        <label className={rnLabelClassName}>Visibility</label>
         <div className="space-y-2">
           {VISIBILITY_OPTIONS.map((opt) => (
             <label
               key={opt.value}
-              className={[
-                'flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors',
+              className={cn(
+                'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
                 data.visibility === opt.value
-                  ? 'border-brand-500/60 bg-brand-500/8'
-                  : 'border-border hover:border-border bg-surface-raised hover:bg-surface-overlay',
-              ].join(' ')}
+                  ? 'border-saffron bg-saffron-tint'
+                  : 'border-rn-border bg-rn-card hover:border-saffron/50',
+              )}
             >
               <input
                 type="radio"
@@ -134,11 +156,11 @@ export function Step1Basics({ data, update, sports }: Props) {
                   visibility: opt.value as 'PUBLIC' | 'UNLISTED' | 'INVITE_ONLY',
                   registrationCode: opt.value !== 'INVITE_ONLY' ? null : data.registrationCode,
                 })}
-                className="mt-0.5 accent-brand-500"
+                className="mt-0.5 accent-saffron"
               />
               <div>
-                <p className="text-sm font-semibold text-text-primary">{opt.label}</p>
-                <p className="text-xs text-text-secondary mt-0.5">{opt.description}</p>
+                <p className="text-sm font-bold text-ink">{opt.label}</p>
+                <p className="mt-0.5 text-xs text-rn-text-secondary">{opt.description}</p>
               </div>
             </label>
           ))}
@@ -147,13 +169,16 @@ export function Step1Basics({ data, update, sports }: Props) {
 
       {/* Registration code — only shown for INVITE_ONLY */}
       {data.visibility === 'INVITE_ONLY' && (
-        <Input
-          label="Registration Code"
-          value={data.registrationCode ?? ''}
-          onChange={(e) => update({ registrationCode: e.target.value || null })}
-          placeholder="e.g. RN2026AXIS"
-          required
-        />
+        <div className="flex flex-col gap-1.5">
+          <label className={rnLabelClassName}>Registration Code</label>
+          <input
+            value={data.registrationCode ?? ''}
+            onChange={(e) => update({ registrationCode: e.target.value || null })}
+            placeholder="e.g. RN2026AXIS"
+            required
+            className={rnFieldClassName}
+          />
+        </div>
       )}
     </div>
   )

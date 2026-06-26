@@ -3,7 +3,8 @@
 import { useTransition } from 'react'
 import { toast } from 'sonner'
 import { Unlock, Lock } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { rnButtonVariants } from '@/components/rn/RnButton'
+import { cn } from '@/lib/utils'
 import { openLineupSubmission, lockLineups } from '@/actions/lineup'
 
 interface Props {
@@ -37,17 +38,17 @@ export function LineupControls({ matchId, status, bothSubmitted, allLocked }: Pr
   return (
     <div className="flex gap-2">
       {status === 'UPCOMING' && (
-        <Button variant="outline" size="sm" onClick={open} loading={isPending}>
-          <Unlock size={14} /> Open for Submission
-        </Button>
+        <button type="button" onClick={open} disabled={isPending} className={cn(rnButtonVariants({ variant: 'secondary', size: 'sm' }))}>
+          <Unlock size={14} /> {isPending ? 'Opening…' : 'Open for Submission'}
+        </button>
       )}
       {status === 'OPEN_FOR_SUBMISSION' && bothSubmitted && (
-        <Button size="sm" onClick={lock} loading={isPending}>
-          <Lock size={14} /> Lock Lineups
-        </Button>
+        <button type="button" onClick={lock} disabled={isPending} className={cn(rnButtonVariants({ variant: 'primary', size: 'sm' }))}>
+          <Lock size={14} /> {isPending ? 'Locking…' : 'Lock Lineups'}
+        </button>
       )}
       {status === 'OPEN_FOR_SUBMISSION' && !bothSubmitted && (
-        <p className="text-xs text-text-muted self-center">
+        <p className="self-center text-xs text-rn-text-muted">
           Waiting for both teams to submit…
         </p>
       )}

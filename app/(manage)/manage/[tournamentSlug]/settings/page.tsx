@@ -89,10 +89,10 @@ export default async function SettingsPage({ params }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       <div>
-        <h1 className="text-xl font-bold text-text-primary">Tournament Settings</h1>
-        <p className="text-sm text-text-secondary mt-1">Edit all tournament details, format, and rules.</p>
+        <h1 className="font-nunito text-xl font-black text-ink">Tournament Settings</h1>
+        <p className="mt-1 text-sm text-rn-text-secondary">Edit all tournament details, format, and rules.</p>
       </div>
       <TournamentWizard
         sports={sports}

@@ -3,7 +3,9 @@
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Upload, AlertCircle, CheckCircle2, ChevronDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { RnCard } from '@/components/rn/RnCard'
+import { rnButtonVariants } from '@/components/rn/RnButton'
+import { cn } from '@/lib/utils'
 import { importPlayersFromExcel, type ImportRow } from '@/actions/import'
 import * as XLSX from 'xlsx'
 
@@ -127,39 +129,43 @@ export function ImportForm({ tournamentId, tournamentSlug }: Props) {
   if (result) {
     return (
       <div className="space-y-4">
-        <div className="rounded-lg border border-success/30 bg-success/5 p-5 space-y-3">
+        <RnCard className="space-y-3 border-rn-green/30 bg-rn-green/5 p-5">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-success shrink-0" />
-            <p className="font-display font-bold uppercase text-success tracking-wide">Import Complete</p>
+            <CheckCircle2 size={18} className="shrink-0 text-rn-green" />
+            <p className="font-nunito font-extrabold uppercase tracking-wide text-rn-green">Import Complete</p>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
             {[
-              { label: 'Imported', value: result.imported, color: 'text-success' },
-              { label: 'Already Registered', value: result.alreadyRegistered, color: 'text-text-muted' },
-              { label: 'Errors', value: result.errors.length, color: result.errors.length > 0 ? 'text-warning' : 'text-text-muted' },
+              { label: 'Imported', value: result.imported, color: 'text-rn-green' },
+              { label: 'Already Registered', value: result.alreadyRegistered, color: 'text-rn-text-muted' },
+              { label: 'Errors', value: result.errors.length, color: result.errors.length > 0 ? 'text-rn-yellow' : 'text-rn-text-muted' },
             ].map((s) => (
-              <div key={s.label} className="rounded-lg bg-surface-overlay p-3">
-                <p className={`font-display font-black text-2xl ${s.color}`}>{s.value}</p>
-                <p className="text-[10px] text-text-muted uppercase tracking-wider mt-1">{s.label}</p>
+              <div key={s.label} className="rounded-xl bg-paper p-3">
+                <p className={cn('font-nunito text-2xl font-black', s.color)}>{s.value}</p>
+                <p className="mt-1 text-[10px] uppercase tracking-wider text-rn-text-muted">{s.label}</p>
               </div>
             ))}
           </div>
-        </div>
+        </RnCard>
 
         {result.errors.length > 0 && (
-          <div className="rounded-lg border border-warning/30 bg-warning-bg p-4 space-y-2">
-            <p className="text-xs font-semibold text-warning uppercase tracking-wider">Skipped rows</p>
+          <RnCard className="space-y-2 border-rn-yellow/40 bg-rn-yellow/15 p-4">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-ink">Skipped rows</p>
             {result.errors.map((e) => (
-              <p key={e.row} className="text-xs text-text-secondary">
+              <p key={e.row} className="text-xs text-rn-text-secondary">
                 Row {e.row} ({e.email}): {e.reason}
               </p>
             ))}
-          </div>
+          </RnCard>
         )}
 
-        <Button variant="ghost" onClick={() => { setResult(null); setHeaders([]); setAllRows([]) }} className="text-sm">
+        <button
+          type="button"
+          onClick={() => { setResult(null); setHeaders([]); setAllRows([]) }}
+          className="text-sm font-bold text-saffron transition-colors hover:text-saffron-300"
+        >
           Import another file
-        </Button>
+        </button>
       </div>
     )
   }
@@ -167,11 +173,11 @@ export function ImportForm({ tournamentId, tournamentSlug }: Props) {
   return (
     <div className="space-y-6">
       {/* Upload area */}
-      <label className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border hover:border-brand-500/50 bg-surface-raised p-10 cursor-pointer transition-colors group">
-        <Upload size={28} className="text-text-muted group-hover:text-brand-400 transition-colors" />
+      <label className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-rn-border bg-rn-card p-10 transition-colors hover:border-saffron">
+        <Upload size={28} className="text-rn-text-muted transition-colors group-hover:text-saffron" />
         <div className="text-center">
-          <p className="text-sm font-semibold text-text-primary">Drop an Excel or CSV file here</p>
-          <p className="text-xs text-text-muted mt-1">Exported from Google Forms · .xlsx or .csv</p>
+          <p className="text-sm font-bold text-ink">Drop an Excel or CSV file here</p>
+          <p className="mt-1 text-xs text-rn-text-muted">Exported from Google Forms · .xlsx or .csv</p>
         </div>
         <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
       </label>
@@ -181,25 +187,25 @@ export function ImportForm({ tournamentId, tournamentSlug }: Props) {
         <div className="space-y-4">
           {/* Mapping UI */}
           <div>
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+            <p className="mb-3 text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">
               Column Mapping — {allRows.length} rows detected
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {(Object.keys(FIELD_LABELS) as (keyof ImportRow)[]).map((field) => (
                 <div key={field} className="flex flex-col gap-1">
-                  <label className="text-xs text-text-secondary">{FIELD_LABELS[field]}</label>
+                  <label className="text-xs text-rn-text-secondary">{FIELD_LABELS[field]}</label>
                   <div className="relative">
                     <select
                       value={colMap[field] ?? -1}
                       onChange={(e) => rebuildPreview({ ...colMap, [field]: parseInt(e.target.value) })}
-                      className="w-full h-8 rounded-md border border-border bg-surface-raised px-2 pr-7 text-xs text-text-primary focus:border-brand-500 focus:outline-none appearance-none"
+                      className="h-8 w-full appearance-none rounded-md border border-rn-border bg-rn-card px-2 pr-7 text-xs text-ink focus:border-saffron focus:outline-none"
                     >
                       <option value={-1}>— not mapped —</option>
                       {headers.map((h, i) => (
                         <option key={i} value={i}>{h}</option>
                       ))}
                     </select>
-                    <ChevronDown size={12} className="absolute right-2 top-2 text-text-muted pointer-events-none" />
+                    <ChevronDown size={12} className="pointer-events-none absolute right-2 top-2 text-rn-text-muted" />
                   </div>
                 </div>
               ))}
@@ -209,53 +215,53 @@ export function ImportForm({ tournamentId, tournamentSlug }: Props) {
           {/* Preview table */}
           {preview.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Preview (first 5 rows)</p>
-              <div className="overflow-x-auto rounded-lg border border-border">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">Preview (first 5 rows)</p>
+              <div className="overflow-x-auto rounded-xl border border-rn-border">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-border bg-surface-overlay">
+                    <tr className="border-b border-rn-border bg-paper">
                       {(['email', 'name', 'phone', 'selfRating', 'gender'] as const).map((f) => (
-                        <th key={f} className="px-3 py-2 text-left font-semibold text-text-muted uppercase tracking-wider whitespace-nowrap">
+                        <th key={f} className="whitespace-nowrap px-3 py-2 text-left font-extrabold uppercase tracking-wider text-rn-text-muted">
                           {FIELD_LABELS[f].replace(' *', '')}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-rn-border">
                     {preview.map((row, i) => (
                       <tr key={i} className={!row.email || !row.name ? 'opacity-40' : ''}>
-                        <td className="px-3 py-2 text-text-secondary max-w-[160px] truncate">{row.email || <span className="text-warning">missing</span>}</td>
-                        <td className="px-3 py-2 text-text-primary whitespace-nowrap">{row.name || <span className="text-warning">missing</span>}</td>
-                        <td className="px-3 py-2 text-text-muted">{row.phone ?? '—'}</td>
-                        <td className="px-3 py-2 text-text-muted">{row.selfRating ?? '—'}</td>
-                        <td className="px-3 py-2 text-text-muted">{row.gender ?? '—'}</td>
+                        <td className="max-w-[160px] truncate px-3 py-2 text-rn-text-secondary">{row.email || <span className="text-rn-yellow">missing</span>}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-ink">{row.name || <span className="text-rn-yellow">missing</span>}</td>
+                        <td className="px-3 py-2 text-rn-text-muted">{row.phone ?? '—'}</td>
+                        <td className="px-3 py-2 text-rn-text-muted">{row.selfRating ?? '—'}</td>
+                        <td className="px-3 py-2 text-rn-text-muted">{row.gender ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               {allRows.length > 5 && (
-                <p className="text-xs text-text-muted">…and {allRows.length - 5} more rows</p>
+                <p className="text-xs text-rn-text-muted">…and {allRows.length - 5} more rows</p>
               )}
             </div>
           )}
 
           {/* Missing required columns warning */}
           {(colMap.email < 0 || colMap.name < 0) && (
-            <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning-bg px-4 py-3">
-              <AlertCircle size={14} className="text-warning shrink-0" />
-              <p className="text-xs text-warning">Map the Email and Name columns before importing.</p>
+            <div className="flex items-center gap-2 rounded-xl border border-rn-yellow/40 bg-rn-yellow/15 px-4 py-3">
+              <AlertCircle size={14} className="shrink-0 text-ink" />
+              <p className="text-xs text-ink">Map the Email and Name columns before importing.</p>
             </div>
           )}
 
-          <Button
+          <button
+            type="button"
             onClick={handleImport}
-            loading={isPending}
-            disabled={colMap.email < 0 || colMap.name < 0 || allRows.length === 0}
-            className="w-full font-display font-bold uppercase tracking-wide"
+            disabled={isPending || colMap.email < 0 || colMap.name < 0 || allRows.length === 0}
+            className={cn(rnButtonVariants({ variant: 'primary' }), 'w-full')}
           >
-            Import {allRows.filter((r) => r.email && r.name).length} Players
-          </Button>
+            {isPending ? 'Importing…' : `Import ${allRows.filter((r) => r.email && r.name).length} Players`}
+          </button>
         </div>
       )}
     </div>
