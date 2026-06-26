@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { RnCard } from '@/components/rn/RnCard'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -21,11 +22,11 @@ export default async function RulesPage({ params }: Props) {
   const scoring = tournament.scoringConfig as { pointsToWin: number; winMargin: number; scoringMethod: string }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Auto-generated rules from config */}
-      <div className="rounded-lg border border-border bg-surface-raised p-4 space-y-3">
-        <p className="text-sm font-semibold text-text-primary">Match Format</p>
-        <div className="space-y-1.5 text-sm text-text-secondary">
+      <RnCard className="p-5">
+        <p className="mb-3 text-xs font-extrabold uppercase tracking-[.15em] text-saffron">Match Format</p>
+        <div className="space-y-1.5 text-sm leading-relaxed text-rn-text-secondary">
           <p>Format: {format.matchType.replace('_', ' ')}</p>
           <p>Games per match: {format.gamesPerMatch}</p>
           <p>Players per side: {format.playersPerSide}</p>
@@ -33,20 +34,20 @@ export default async function RulesPage({ params }: Props) {
           <p>Scoring method: {scoring.scoringMethod.replace('_', ' ')}</p>
           {format.tiebreakEnabled && <p>Tiebreak: 5th game played if match ends {Math.floor(format.gamesPerMatch / 2)}–{Math.floor(format.gamesPerMatch / 2)}</p>}
         </div>
-      </div>
+      </RnCard>
 
       {/* Custom rules */}
       {tournament.rules ? (
-        <div className="rounded-lg border border-border bg-surface-raised p-4">
-          <p className="text-sm font-semibold text-text-primary mb-3">Tournament Rules</p>
-          <p className="text-sm text-text-secondary whitespace-pre-wrap leading-relaxed">
+        <RnCard className="p-5">
+          <p className="mb-3 text-xs font-extrabold uppercase tracking-[.15em] text-saffron">Tournament Rules</p>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-rn-text-secondary">
             {tournament.rules}
           </p>
-        </div>
+        </RnCard>
       ) : (
-        <div className="rounded-lg border border-dashed border-border p-6 text-center">
-          <p className="text-text-muted text-sm">No additional rules specified.</p>
-        </div>
+        <RnCard className="border-dashed p-6 text-center">
+          <p className="text-sm text-rn-text-muted">No additional rules specified.</p>
+        </RnCard>
       )}
     </div>
   )

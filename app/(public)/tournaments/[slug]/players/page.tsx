@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { Avatar } from '@/components/ui/avatar'
+import { RnCard } from '@/components/rn/RnCard'
+import { PlayersFilterList } from './PlayersFilterList'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -27,7 +27,7 @@ export default async function PublicPlayersPage({ params }: Props) {
           user: { select: { name: true, avatarUrl: true } },
           teamMemberships: {
             where: { team: { tournamentId: tournament.id } },
-            include: { team: { select: { name: true } } },
+            include: { team: { select: { name: true, slug: true } } },
           },
         },
       },
@@ -37,30 +37,19 @@ export default async function PublicPlayersPage({ params }: Props) {
 
   if (registrations.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border p-8 text-center">
-        <p className="text-text-muted text-sm">No players registered yet.</p>
-      </div>
+      <RnCard className="border-dashed p-8 text-center">
+        <p className="text-sm text-rn-text-muted">No players registered yet.</p>
+      </RnCard>
     )
   }
 
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {registrations.map((reg) => {
-        const teamName = reg.player.teamMemberships[0]?.team.name
-        return (
-          <Link
-            key={reg.id}
-            href={`/players/${reg.player.slug}`}
-            className="flex items-center gap-3 rounded-lg border border-border bg-surface-raised p-3 hover:border-brand-500/40 transition-colors"
-          >
-            <Avatar src={reg.player.user.avatarUrl} name={reg.player.user.name} size="sm" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary truncate">{reg.player.user.name}</p>
-              {teamName && <p className="text-xs text-text-muted">{teamName}</p>}
-            </div>
-          </Link>
-        )
-      })}
-    </div>
-  )
+  const players = registrations.map((reg) => ({
+    id: reg.id,
+    slug: reg.player.slug,
+    name: reg.player.user.name,
+    avatarUrl: reg.player.user.avatarUrl,
+    teamName: reg.player.teamMemberships[0]?.team.name ?? null,
+  }))
+
+  return <PlayersFilterList players={players} />
 }

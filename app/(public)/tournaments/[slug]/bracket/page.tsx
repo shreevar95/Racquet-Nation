@@ -226,23 +226,6 @@ function GroupCard({ group, teamsAdvance }: { group: GroupData; teamsAdvance: nu
         )}
       </div>
 
-      {group.matches.length > 0 && (
-        <div className="space-y-1 border-t border-rn-border px-4 py-2">
-          {group.matches.slice(-3).map((m) => (
-            <div key={m.id} className="flex items-center justify-between gap-2 text-[11px]">
-              <span className={cn('min-w-0 flex-1 truncate', m.winnerId === m.homeTeamId ? 'font-extrabold text-ink' : 'text-rn-text-secondary')}>
-                {m.homeTeam.name}
-              </span>
-              <span className="shrink-0 tabular-nums text-rn-text-muted">
-                {m.homeTeamScore}–{m.awayTeamScore}
-              </span>
-              <span className={cn('min-w-0 flex-1 truncate text-right', m.winnerId === m.awayTeamId ? 'font-extrabold text-ink' : 'text-rn-text-secondary')}>
-                {m.awayTeam.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
     </RnCard>
   )
 }

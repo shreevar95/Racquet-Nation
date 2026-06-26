@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { Avatar } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -35,41 +35,32 @@ export default async function PublicTeamsPage({ params }: Props) {
   })
   if (!tournament) notFound()
 
+  const groupStageGroups = tournament.groups.filter((g) => g.name !== 'Final')
+
   return (
     <div className="space-y-6">
-      {tournament.groups.map((group) => (
+      {groupStageGroups.map((group) => (
         <div key={group.id} className="space-y-2">
-          <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">{group.name}</p>
-          <div className="space-y-2">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-rn-text-muted">{group.name}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
             {group.teams.map((team) => {
               const captain = team.memberships[0]?.player
               return (
-                <Link
-                  key={team.id}
-                  href={`/teams/${team.slug}`}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-surface-raised p-3 hover:border-brand-500/40 transition-colors"
-                >
-                  <div className="h-10 w-10 rounded-lg border border-border bg-surface-overlay shrink-0 flex items-center justify-center">
-                    {team.logoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={team.logoUrl} alt={team.name} className="h-full w-full object-cover rounded-lg" />
-                    ) : (
-                      <span className="text-xs font-bold text-text-muted">
-                        {team.name.slice(0, 2).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-text-primary truncate">{team.name}</p>
-                    {captain && (
-                      <p className="text-xs text-text-muted">
-                        Captain: {captain.user.name}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-xs text-text-muted shrink-0">
-                    {team._count.memberships} players
-                  </span>
+                <Link key={team.id} href={`/teams/${team.slug}`}>
+                  <RnCard className="rn-card-hover flex items-center gap-3 p-3.5">
+                    <RnTeamTile name={team.name} color={team.primaryColor} logoUrl={team.logoUrl} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-ink">{team.name}</p>
+                      {captain && (
+                        <p className="truncate text-xs text-rn-text-muted">
+                          Captain: {captain.user.name}
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-xs font-extrabold text-rn-text-muted">
+                      {team._count.memberships} players
+                    </span>
+                  </RnCard>
                 </Link>
               )
             })}

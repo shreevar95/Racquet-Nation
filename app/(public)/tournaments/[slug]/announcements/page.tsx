@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { formatRelativeTime } from '@/lib/utils'
 import { Pin } from 'lucide-react'
+import { RnCard } from '@/components/rn/RnCard'
+import { cn } from '@/lib/utils'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -26,33 +28,28 @@ export default async function AnnouncementsPage({ params }: Props) {
 
   if (announcements.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border p-8 text-center">
-        <p className="text-text-muted text-sm">No announcements yet.</p>
-      </div>
+      <RnCard className="border-dashed p-8 text-center">
+        <p className="text-sm text-rn-text-muted">No announcements yet.</p>
+      </RnCard>
     )
   }
 
   return (
     <div className="space-y-3">
       {announcements.map((a) => (
-        <div
+        <RnCard
           key={a.id}
-          className={[
-            'rounded-lg border p-4 space-y-2',
-            a.isPinned
-              ? 'border-brand-500/30 bg-brand-500/5'
-              : 'border-border bg-surface-raised',
-          ].join(' ')}
+          className={cn('space-y-2 p-4', a.isPinned && 'border-saffron/30 bg-saffron-tint')}
         >
           <div className="flex items-start gap-2">
-            {a.isPinned && <Pin size={14} className="text-brand-400 shrink-0 mt-0.5" />}
-            <p className="font-semibold text-text-primary">{a.title}</p>
+            {a.isPinned && <Pin size={14} className="mt-0.5 shrink-0 text-saffron" />}
+            <p className="font-nunito font-extrabold text-ink">{a.title}</p>
           </div>
-          <p className="text-sm text-text-secondary whitespace-pre-wrap leading-relaxed">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-rn-text-secondary">
             {a.body}
           </p>
-          <p className="text-xs text-text-muted">{formatRelativeTime(a.createdAt)}</p>
-        </div>
+          <p className="text-xs text-rn-text-muted">{formatRelativeTime(a.createdAt)}</p>
+        </RnCard>
       ))}
     </div>
   )

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { Avatar } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
+import { RnStatTile } from '@/components/rn/RnStatTile'
 import { formatDate } from '@/lib/utils'
 
 interface Props {
@@ -49,73 +50,74 @@ export default async function PublicPlayerPage({ params }: Props) {
   const { user } = profile
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Avatar src={user.avatarUrl} name={user.name} size="xl" />
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-text-primary">{user.name}</h1>
-          {profile.location && (
-            <p className="text-sm text-text-secondary">{profile.location}</p>
+    <div className="min-h-screen bg-paper font-nunito text-ink">
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <RnTeamTile name={user.name} logoUrl={user.avatarUrl} color="#19A463" size="xl" className="rounded-full" />
+          <div className="space-y-1">
+            <h1 className="font-nunito text-2xl font-black text-ink">{user.name}</h1>
+            {profile.location && (
+              <p className="text-sm text-rn-text-secondary">{profile.location}</p>
+            )}
+            <p className="text-xs text-rn-text-muted">
+              Member since {formatDate(user.createdAt)}
+            </p>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="flex gap-3">
+          {profile.selfRating != null && (
+            <RnStatTile value={profile.selfRating.toFixed(1)} label="Self Rating" highlighted />
           )}
-          <p className="text-xs text-text-muted">
-            Member since {formatDate(user.createdAt)}
-          </p>
+          {profile.yearsPlaying != null && (
+            <RnStatTile value={profile.yearsPlaying} label="Years Playing" />
+          )}
+          <RnStatTile value={profile.teamMemberships.length} label="Tournaments" />
         </div>
-      </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
-        {profile.selfRating && (
-          <div className="rounded-lg bg-surface-raised border border-border p-3 text-center">
-            <p className="text-xl font-bold text-brand-400">{profile.selfRating.toFixed(1)}</p>
-            <p className="text-xs text-text-muted mt-0.5">Self Rating</p>
+        {/* Bio */}
+        {profile.bio && (
+          <RnCard className="p-4">
+            <p className="text-sm leading-relaxed text-rn-text-secondary">{profile.bio}</p>
+          </RnCard>
+        )}
+
+        {/* Tournament history */}
+        {profile.teamMemberships.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-base font-extrabold text-ink">Tournament History</h2>
+            <div className="space-y-2">
+              {profile.teamMemberships.map((m) => (
+                <a
+                  key={m.id}
+                  href={`/tournaments/${m.team.tournament.slug}`}
+                  className="block"
+                >
+                  <RnCard className="rn-card-hover flex items-center justify-between p-3.5">
+                    <div>
+                      <p className="text-sm font-bold text-ink">{m.team.tournament.name}</p>
+                      <p className="mt-0.5 text-xs text-rn-text-secondary">
+                        {m.team.name}
+                      </p>
+                    </div>
+                    <span
+                      className={
+                        m.role === 'CAPTAIN'
+                          ? 'rounded-full bg-saffron-tint px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-saffron'
+                          : 'rounded-full bg-paper px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-rn-text-muted'
+                      }
+                    >
+                      {m.role}
+                    </span>
+                  </RnCard>
+                </a>
+              ))}
+            </div>
           </div>
         )}
-        {profile.yearsPlaying && (
-          <div className="rounded-lg bg-surface-raised border border-border p-3 text-center">
-            <p className="text-xl font-bold text-text-primary">{profile.yearsPlaying}</p>
-            <p className="text-xs text-text-muted mt-0.5">Years Playing</p>
-          </div>
-        )}
-        <div className="rounded-lg bg-surface-raised border border-border p-3 text-center">
-          <p className="text-xl font-bold text-text-primary">{profile.teamMemberships.length}</p>
-          <p className="text-xs text-text-muted mt-0.5">Tournaments</p>
-        </div>
       </div>
-
-      {/* Bio */}
-      {profile.bio && (
-        <div className="rounded-lg bg-surface-raised border border-border p-4">
-          <p className="text-sm text-text-secondary leading-relaxed">{profile.bio}</p>
-        </div>
-      )}
-
-      {/* Tournament history */}
-      {profile.teamMemberships.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-text-primary">Tournament History</h2>
-          <div className="space-y-2">
-            {profile.teamMemberships.map((m) => (
-              <a
-                key={m.id}
-                href={`/tournaments/${m.team.tournament.slug}`}
-                className="flex items-center justify-between rounded-lg bg-surface-raised border border-border p-3 hover:border-brand-500/50 transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium text-text-primary">{m.team.tournament.name}</p>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    {m.team.name}
-                  </p>
-                </div>
-                <Badge variant={m.role === 'CAPTAIN' ? 'brand' : 'default'}>
-                  {m.role}
-                </Badge>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

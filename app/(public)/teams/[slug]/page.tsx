@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { isTeamCaptain, canManageTournament } from '@/lib/permissions'
-import { Avatar } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import { RnCard } from '@/components/rn/RnCard'
+import { RnTeamTile } from '@/components/rn/RnTeamTile'
 import { EditTeamNameButton } from '@/app/(manage)/manage/[tournamentSlug]/teams/EditTeamNameButton'
 import { EditTeamAvatarButton } from '@/app/(manage)/manage/[tournamentSlug]/teams/EditTeamAvatarButton'
 
@@ -75,26 +75,14 @@ export default async function PublicTeamPage({ params }: Props) {
   ].sort((a, b) => 0)
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
+    <div className="min-h-screen bg-paper font-nunito text-ink">
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
+        {/* Header */}
         <div className="flex items-center gap-3">
-          <div
-            className="h-14 w-14 rounded-xl border border-border flex items-center justify-center shrink-0 overflow-hidden"
-            style={{ background: team.primaryColor ?? '#1c2e44' }}
-          >
-            {team.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={team.logoUrl} alt={team.name} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-sm font-black text-white">
-                {team.name.slice(0, 2).toUpperCase()}
-              </span>
-            )}
-          </div>
+          <RnTeamTile name={team.name} color={team.primaryColor} logoUrl={team.logoUrl} size="xl" />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-black text-text-primary">{team.name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-nunito text-2xl font-black text-ink">{team.name}</h1>
               {canEdit && (
                 <div className="flex items-center gap-1.5">
                   <EditTeamNameButton teamId={team.id} currentName={team.name} />
@@ -107,71 +95,74 @@ export default async function PublicTeamPage({ params }: Props) {
                 </div>
               )}
             </div>
-            <Link href={`/tournaments/${team.tournament.slug}`} className="text-sm text-brand-400 hover:text-brand-300">
+            <Link href={`/tournaments/${team.tournament.slug}`} className="text-sm font-bold text-saffron transition-colors hover:text-saffron-300">
               {team.tournament.name}
             </Link>
             {team.group && (
-              <p className="text-xs text-text-muted mt-0.5">{team.group.name}</p>
+              <p className="mt-0.5 text-xs text-rn-text-muted">{team.group.name}</p>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Roster */}
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-text-primary">Roster</p>
-        <div className="space-y-1">
-          {team.memberships.map((m) => (
-            <Link
-              key={m.id}
-              href={`/players/${m.player.slug}`}
-              className="flex items-center gap-2.5 rounded-lg border border-border bg-surface-raised p-2.5 hover:border-brand-500/40 transition-colors"
-            >
-              <Avatar src={m.player.user.avatarUrl} name={m.player.user.name} size="sm" />
-              <span className="flex-1 text-sm text-text-primary">{m.player.user.name}</span>
-              {m.role !== 'PLAYER' && (
-                <Badge variant={m.role === 'CAPTAIN' ? 'brand' : 'default'} className="text-[10px]">
-                  {m.role}
-                </Badge>
-              )}
-            </Link>
-          ))}
-          {team.memberships.length === 0 && (
-            <p className="text-sm text-text-muted">No players assigned yet.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Recent results */}
-      {allResults.length > 0 && (
+        {/* Roster */}
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-text-primary">Recent Results</p>
-          <div className="space-y-1">
-            {allResults.slice(0, 5).map((r, i) => (
-              <Link
-                key={i}
-                href={`/matches/${r.matchSlug}`}
-                className="flex items-center justify-between rounded-lg border border-border bg-surface-raised p-3 hover:border-brand-500/40 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={[
-                      'w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center',
-                      r.won ? 'bg-success-bg text-success' : 'bg-error-bg text-error',
-                    ].join(' ')}
-                  >
-                    {r.won ? 'W' : 'L'}
-                  </span>
-                  <span className="text-sm text-text-primary">vs {r.opponent}</span>
-                </div>
-                <span className="text-sm font-bold text-text-muted">
-                  {r.isHome ? `${r.homeScore}–${r.awayScore}` : `${r.awayScore}–${r.homeScore}`}
-                </span>
+          <p className="text-sm font-extrabold text-ink">Roster</p>
+          <div className="space-y-1.5">
+            {team.memberships.map((m) => (
+              <Link key={m.id} href={`/players/${m.player.slug}`}>
+                <RnCard className="rn-card-hover flex items-center gap-2.5 p-2.5">
+                  <RnTeamTile name={m.player.user.name} logoUrl={m.player.user.avatarUrl} color="#19A463" size="sm" className="rounded-full" />
+                  <span className="flex-1 text-sm font-bold text-ink">{m.player.user.name}</span>
+                  {m.role !== 'PLAYER' && (
+                    <span
+                      className={
+                        m.role === 'CAPTAIN'
+                          ? 'rounded-full bg-saffron-tint px-2 py-0.5 text-[10px] font-extrabold uppercase text-saffron'
+                          : 'rounded-full bg-paper px-2 py-0.5 text-[10px] font-extrabold uppercase text-rn-text-muted'
+                      }
+                    >
+                      {m.role}
+                    </span>
+                  )}
+                </RnCard>
               </Link>
             ))}
+            {team.memberships.length === 0 && (
+              <p className="text-sm text-rn-text-muted">No players assigned yet.</p>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Recent results */}
+        {allResults.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-extrabold text-ink">Recent Results</p>
+            <div className="space-y-1.5">
+              {allResults.slice(0, 5).map((r, i) => (
+                <Link key={i} href={`/matches/${r.matchSlug}`}>
+                  <RnCard className="rn-card-hover flex items-center justify-between p-3">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={
+                          r.won
+                            ? 'flex h-5 w-5 items-center justify-center rounded text-[10px] font-extrabold bg-rn-green/10 text-rn-green'
+                            : 'flex h-5 w-5 items-center justify-center rounded text-[10px] font-extrabold bg-red-down/10 text-red-down'
+                        }
+                      >
+                        {r.won ? 'W' : 'L'}
+                      </span>
+                      <span className="text-sm text-ink">vs {r.opponent}</span>
+                    </div>
+                    <span className="font-nunito text-sm font-black text-ink">
+                      {r.isHome ? `${r.homeScore}–${r.awayScore}` : `${r.awayScore}–${r.homeScore}`}
+                    </span>
+                  </RnCard>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
